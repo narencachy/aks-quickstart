@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fe2
+spec:
+  selector:
+    matchLabels:
+      app: fe2
+  template:
+    metadata:
+      labels:
+        app: fe2
+    spec:
+      containers:
+      - name: fe2
+        image: bartr/gowac
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        ports:
+        - containerPort: 80
+        env:
+        - name: REDIS
+          value: "backend"
