@@ -16,6 +16,13 @@ kubectl get service,pods
 kubectl apply -f frontend
 kubectl get service,pods
 
+k port-forward --namespace default svc/backend 6379:6379
+ctl-z
+bg
+fg
+ctl-c
+
+
 kubectl apply -f fe2
 kubectl get service,pods
 
@@ -23,6 +30,17 @@ kubectl get service,pods
 az aks scale --no-wait -g k8s -n k8s -c 3
 
 k get nodes,pods,service
+
+## Instal Helm
+sudo snap install helm --classic
+
+kubectl apply -f helm/rbac-helm.yaml
+
+helm init --service-account tiller
+
+helm --upgrade
+
+helm install stable/redis
 
 
 az group delete -y --no-wait -g k8s
