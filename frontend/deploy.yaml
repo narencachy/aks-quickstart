@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: bartr/gowac
+        image: microsoft/azure-vote-front:v1
         resources:
           requests:
             cpu: 100m
