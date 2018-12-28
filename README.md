@@ -43,25 +43,16 @@ Note that if you run this repeatedly, you will need to edit / remove ~/.kube/con
 kubectl get nodes
 ```
 
-### Create and deploy backend (Redis) and frontend (web) services
+### Create and deploy backend (Redis)
 
 ```
 kubectl apply -f backend
-kubectl apply -f frontend
 ```
 
-### Wait for the apps to start
+### Wait for the app to start
 
 ```
 kubectl get deploy
-```
-
-### Get the public IP for frontend
-
-```
-kubectl get svc frontend
-
-browse to public IP - add some votes
 ```
 
 ## Connect to the Redis container
@@ -75,14 +66,30 @@ kubectl port-forward svc/backend 6379:6379 &
 ### Run some Redis commands
 
 ```
-redis-cli
+bin/redis-cli
 set Dogs 10
 set Cats 0
 
 get Dogs
 get Cats
 
-Refresh web page
+# Stop Port Forwarding
+fg
+<ctl> c
+```
+
+### Create and deploy frontend web app
+
+```
+kubectl apply -f frontend
+```
+
+### Get the public IP
+
+```
+kubectl get svc frontend
+
+browse to public IP - add some votes
 ```
 
 ### Deploy a simple go web app
