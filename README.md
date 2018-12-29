@@ -1,21 +1,21 @@
 # AKS Walkthrough
 
 ## Scenario
-In this walkthrough, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on {this link} but additional details and scenarios are covered.
+In this walkthrough, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on <https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough> but additional details and scenarios are covered.
 
-After creating the cluster, we will deploy a backend service based on the standard Redis Docker container, demonstrating how to connect to containers in the cluster via port forwarding.
+After creating the cluster, we will deploy a backend service based on the standard Redis Docker container, demonstrating how to connect to containers in the cluster via port forwarding. All deployments are done using the "declaritive" approach - read more here: <https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/>
 
 Next we will deploy the web front end which uses the Redis backend to count "votes". This will automatically create an Azure Public IP address as well as an Azure Load Balancer.
 
-Next we will deploy a simple Go Web app as a DaemonSet. This will create another Azure Public IP address and reconfigure the load balancer.
+Next we will deploy a simple Go Web app as a DaemonSet. This will create another Azure Public IP address and reconfigure the load balancer to support both IPs.
 
-Next we will scale the cluster from one node to three nodes. This will cause the Go Web App to create 3 instances as one per node is the default for DaemonSets. The other services will not change.
+Next we will scale the cluster from one node to three nodes. This will cause the Go Web App to create 3 instances as one per node is the default for DaemonSets. The other services will not change. This step is optional.
 
 Next we will install Helm onto the cluster and use a Helm Chart to deploy a Redis cluster. We will modify the web app to use the new cluster and delete the original backend deployment.
 
 Lastly, we'll delete everything.
 
-If all goes well, the walk through takes about 45 minutes.
+The walk through takes about 45 minutes.
 
 ## Let's get started
 
@@ -63,6 +63,11 @@ az group create -l $AKSLOC -g $AKSRG
 az aks create -g $AKSRG -n $AKSNAME -c 1 -s $AKSSIZE
 ```
 
+### What this did
+If you check the Azure portal, you will see that this command created two resource groups - AKS and MC_AKSRG_AKSNAME_AKSLOC. The AKS resource group contains the AKS service (Kubernetes Controller). The other resource group contains the k8s nodes. Here is a screen shot of what is created.
+
+![Initial node resource group](images/aks-node-initial.PNG)
+
 ### Get the k8s credentials and save in ~/.kube/config
 
 ```
@@ -96,8 +101,9 @@ kubectl port-forward svc/backend 6379:6379 &
 
 # Run some Redis commands
 bin/redis-cli
+
 set Dogs 10
-set Cats 0
+set Cats 1
 
 get Dogs
 get Cats
@@ -120,6 +126,12 @@ watch kubectl get svc frontend
 # browse to public IP to test app
 ```
 
+### Node Resource Group
+
+Notice that AKS added a Public IP and a Load Balancer after you deployed the frontend service. The YAML in frontend/svc.yaml specifies "LoadBalancer" as the type of service.
+
+![screenshot](images/aks-node-frontend.PNG)
+
 ### Deploy a simple go web app
 
 ```
@@ -131,9 +143,17 @@ watch kubectl get svc,pods
 # Browse to public IP
 ```
 
+### Node Resource Group
+
+Notice that AKS added a Public IP and reconfigured the Load Balancer after you deployed the frontend service. The YAML in fe2/svc.yaml specifies "LoadBalancer" as the type of service.
+
+![screenshot](images/aks-node-fe2.PNG)
+
 ### Scale the k8s cluster to 3 nodes
 
 ```
+# this step is optional
+# the Helm deployment will work without doing this step
 az aks scale --no-wait -g $AKSRG -n $AKSNAME -c 3
 
 # Wait for nodes to deploy
@@ -151,7 +171,10 @@ Mac: brew install kubernetes-helm
 ### Intialize Helm on cluster
 
 ```
+# Add RBAC role for Tiller
 kubectl apply -f helm/rbac-helm.yaml
+
+# Initialize Helm
 helm init --service-account tiller --upgrade
 
 # Wait for tiller to be available
@@ -171,6 +194,7 @@ kubectl port-forward svc/backend-redis-master 6379:6379 &
 
 # Run some Redis commands
 bin/redis-cli
+
 set Dogs 100
 set Cats 2
 
@@ -197,14 +221,40 @@ git checkout frontend/deploy.yaml
 watch kubectl get deploy,pods
 ```
 
-### Clean up by deleting everything
+### Delete original backend service
 
 ```
+kubectl delete -f backend
+
+# Wait for service to be deleted
+watch kubectl get svc,pods
+```
+
+### Node Resource Group
+
+Notice that AKS added a disk image to the node Resource Group. The following YAML sets up Redis Persistance in helm/redis.yaml
+
+```
+persistence:
+    enabled: true
+    path: /data
+    subPath: ""
+    accessModes:
+    - ReadWriteOnce
+    size: 8Gi
+```
+
+![screenshot](images/aks-node-fe2.PNG)
+
+### Clean up
+
+```
+# Delete resource groups
 az group delete -y --no-wait -g $AKSRG
 az group delete -y --no-wait -g MC_${AKSRG}_${AKSNAME}_${AKSLOC}
 az group list -o table
 
-# Only remove this file if this is the only k8s cluster you use. Otherwise, edit the file and remove the key information
+# Only remove this file if this is the only k8s cluster in the file. Otherwise, edit the file and remove the key information
 
 rm ~/.kube/config
 ```
