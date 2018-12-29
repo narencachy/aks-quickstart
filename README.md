@@ -1,77 +1,108 @@
 # AKS Walkthrough
 
+## Scenario
+In this walkthrough, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on {this link} but additional details and scenarios are covered.
+
+After creating the cluster, we will deploy a backend service based on the standard Redis Docker container, demonstrating how to connect to containers in the cluster via port forwarding.
+
+Next we will deploy the web front end which uses the Redis backend to count "votes". This will automatically create an Azure Public IP address as well as an Azure Load Balancer.
+
+Next we will deploy a simple Go Web app as a DaemonSet. This will create another Azure Public IP address and reconfigure the load balancer.
+
+Next we will scale the cluster from one node to three nodes. This will cause the Go Web App to create 3 instances as one per node is the default for DaemonSets. The other services will not change.
+
+Next we will install Helm onto the cluster and use a Helm Chart to deploy a Redis cluster. We will modify the web app to use the new cluster and delete the original backend deployment.
+
+Lastly, we'll delete everything.
+
+If all goes well, the walk through takes about 45 minutes.
+
+## Let's get started
+
+AKS is not currently available in all regions, so we'll need to pick the correct region. The default in the script is Central US. We also need to verify that whatever size VMs we use for nodes are available in that region as well.
+
+### List of regions where AKS is available
+
+<https://docs.microsoft.com/en-us/azure/aks/container-service-quotas>
+
+### List of VM Sizes in that region
+
+```
+# change centralus to a different region if desired
+az vm list-sizes -l centralus -o table | grep s_v3
+```
+
+### Set environment variables
+
+```
+# Change these if desired
+AKSSUB=k8s
+AKSLOC=centralus
+AKSSIZE=Standard_D2s_v3
+
+AKSRG=aks
+AKSNAME=aks
+
+# setup an alias (optional)
+alias k=kubectl
+```
+
 ### Login and select your Azure subscription
 
 ```
 az login
-az subscrition set -s k8s
+az subscrition set -s $AKSSUB
 ```
 
-### Select a region that AKS is available in (centralus)
-
-<https://docs.microsoft.com/en-us/azure/aks/container-service-quotas>
-
-### Create a resource group in centralus (or other region)
+### Create a resource group and AKS Cluster
 
 ```
-az group create -l centralus -g k8s
-```
+az group create -l $AKSLOC -g $AKSRG
 
-### Choose a VM size that is available in your chosen region (Standard_D2s_v3)
-
-```
-az vm list-sizes -l centralus -o table | grep s_v3
-```
-
-### Create the AKS cluster (make sure the VM size is available in that region)
-
-```
-az aks create -g k8s -n k8s  -c 1 -u bartr -s Standard_D2s_v3 --nodepool-name west --no-wait
+# this takes a while
+az aks create -g $AKSRG -n $AKSNAME -c 1 -s $AKSSIZE
 ```
 
 ### Get the k8s credentials and save in ~/.kube/config
 
 ```
-az aks get-credentials -g k8s -n k8s
-    
-Note that if you run this repeatedly, you will need to edit / remove ~/.kube/control
+az aks get-credentials -g $AKSRG -n $AKSNAME
+
+# Note: if you run this quickstart repeatedly, you will need to edit / remove ~/.kube/control before running this command
 ```
 
-### List the k8s nodes (should be 1 unless you changed -c 1)
+### Wait for the node(s) to be ready
 
 ```
-kubectl get nodes
+watch kubectl get nodes
 ```
 
 ### Create and deploy backend (Redis)
 
 ```
 kubectl apply -f backend
-```
 
-### Wait for the app to start
-
-```
-kubectl get deploy
+# Wait for the app to start
+watch kubectl get deploy,pods
 ```
 
 ## Connect to the Redis container
 
-### Start port forarding in background
-
 ```
+# Start port forarding in background
 kubectl port-forward svc/backend 6379:6379 &
-```
 
-### Run some Redis commands
+# wait for port to be forwarded
 
-```
+# Run some Redis commands
 bin/redis-cli
 set Dogs 10
 set Cats 0
 
 get Dogs
 get Cats
+
+exit
 
 # Stop Port Forwarding
 fg
@@ -82,45 +113,37 @@ fg
 
 ```
 kubectl apply -f frontend
-```
 
-### Get the public IP
+# Get the public IP
+watch kubectl get svc frontend
 
-```
-kubectl get svc frontend
-
-browse to public IP - add some votes
+# browse to public IP to test app
 ```
 
 ### Deploy a simple go web app
 
 ```
 kubectl apply -f fe2
-```
 
-### Wait for service to deploy
+# Wait for service to start
+watch kubectl get svc,pods
 
-```
-wait kubectl get svc
-
-Browse to public IP
+# Browse to public IP
 ```
 
 ### Scale the k8s cluster to 3 nodes
 
 ```
-az aks scale --no-wait -g k8s -n k8s -c 3
-```
+az aks scale --no-wait -g $AKSRG -n $AKSNAME -c 3
 
-### Wait for nodes to deploy
-
-```
+# Wait for nodes to deploy
 watch kubectl get nodes,pods
 ```
 
 ### Install Helm cli
 
 ```
+Azure Cloud Shell: already installed
 Ubuntu: sudo snap install helm --classic
 Mac: brew install kubernetes-helm
 ```
@@ -128,36 +151,60 @@ Mac: brew install kubernetes-helm
 ### Intialize Helm on cluster
 
 ```
-cd helm
 kubectl apply -f helm/rbac-helm.yaml
 helm init --service-account tiller --upgrade
+
+# Wait for tiller to be available
+watch kubectl -n kube-system get deploy
 ```
 
-### Wait for tiller to be available
+### Install redis from Helm
 
 ```
-kubectl -n kube-system get deploy
+helm install --values helm/redis.yaml --name backend stable/redis 
 
-helm list
+# Wait for pod to be ready
+watch kubectl get pods
 
-helm install --values redis.yaml --name backend stable/redis 
+# Start port forarding in background
+kubectl port-forward svc/backend-redis-master 6379:6379 &
+
+# Run some Redis commands
+bin/redis-cli
+set Dogs 100
+set Cats 2
+
+# Stop Port Forwarding
+fg
+
+# Press <ctl> c
 ```
 
-### Change frontend
+### Change frontend to use Helm deployed service
 
 ```
-Edit frontend/deploy.yaml
-Change "backend" to "backend-redis-master"
+nano frontend/deploy.yaml
+
+# Change "backend" to "backend-redis-master"
+# Save
+
 kubectl apply -f frontend/deploy.yaml
+
+# revert the file
+git checkout frontend/deploy.yaml
+
+# Wait for deploy / pods
+watch kubectl get deploy,pods
 ```
 
 ### Clean up by deleting everything
 
 ```
-az group delete -y --no-wait -g k8s
-az group delete -y --no-wait -g MC_k8s_k8s_centralus
+az group delete -y --no-wait -g $AKSRG
+az group delete -y --no-wait -g MC_${AKSRG}_${AKSNAME}_${AKSLOC}
+az group list -o table
 
-Only remove this file if this is the only k8s cluster you use. Otherwise, edit the file and remove the key information
+# Only remove this file if this is the only k8s cluster you use. Otherwise, edit the file and remove the key information
 
 rm ~/.kube/config
 ```
