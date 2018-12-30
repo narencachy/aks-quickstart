@@ -3,7 +3,7 @@
 ## Scenario
 In this walkthrough, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on <https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough> but additional details and scenarios are covered.
 
-After creating the cluster, we will deploy a backend service based on the standard Redis Docker container, demonstrating how to connect to containers in the cluster via port forwarding. All deployments are done using the "declaritive" approach - read more here: <https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/>
+After creating the cluster, we will deploy a backend service based on the standard Redis Docker container, demonstrating how to connect to containers in the cluster via port forwarding. All deployments are done using the "declarative" approach - read more here: <https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/>
 
 Next we will deploy the web front end which uses the Redis backend to count "votes". This will automatically create an Azure Public IP address as well as an Azure Load Balancer.
 
@@ -16,6 +16,25 @@ Next we will install Helm onto the cluster and use a Helm Chart to deploy a Redi
 Lastly, we'll delete everything.
 
 The walk through takes about 45 minutes.
+
+## Prerequisites
+
+This walk through has been tested using Azure Cloud Shell (bash), Mac terminal and Ubuntu (bash).
+
+Everything you need is installed in Azure Cloud Shell. If you're using Mac or Ubuntu, you will need to install the Azure CLI first.
+
+You will also need to install kubectl (the Kubernetes CLI) and Helm.
+
+```
+# Install kubectl
+az aks install-cli
+
+#Ubuntu
+sudo snap install helm --classic
+
+#Mac
+brew install kubernetes-helm
+```
 
 ## Let's get started
 
@@ -33,6 +52,8 @@ az vm list-sizes -l centralus -o table | grep s_v3
 ```
 
 ### Set environment variables
+
+The script uses these environment variables for convenience.
 
 ```
 # Change these if desired
@@ -56,6 +77,8 @@ az subscrition set -s $AKSSUB
 
 ### Create a resource group and AKS Cluster
 
+If you add AKS to an existing Resource Group, *DO NOT* delete the Resource Group in the cleanup stage!
+
 ```
 az group create -l $AKSLOC -g $AKSRG
 
@@ -64,7 +87,7 @@ az aks create -g $AKSRG -n $AKSNAME -c 1 -s $AKSSIZE
 ```
 
 ### What this did
-If you check the Azure portal, you will see that this command created two resource groups - AKS and MC_AKSRG_AKSNAME_AKSLOC. The AKS resource group contains the AKS service (Kubernetes Controller). The other resource group contains the k8s nodes. Here is a screen shot of what is created.
+If you check the Azure portal, you will see that this command created two resource groups - AKS and MC_AKSRG_AKSNAME_AKSLOC. The AKS resource group contains the AKS service (Kubernetes Controller). The other resource group contains the k8s nodes. Here is a screen shot of what is created. You will notice that there is one Node (VM).
 
 ![Initial node resource group](images/aks-node-initial.PNG)
 
@@ -82,7 +105,9 @@ az aks get-credentials -g $AKSRG -n $AKSNAME
 watch kubectl get nodes
 ```
 
-### Create and deploy backend (Redis)
+### Create and deploy backend service (Redis)
+
+This uses the "declarative" approach based on the YAML files in the backend directory. The files are split into a services file and a deployment file but can also be combined. You can also use the -R option to recursively process the directory tree for more complex services.
 
 ```
 kubectl apply -f backend
@@ -102,6 +127,7 @@ kubectl port-forward svc/backend 6379:6379 &
 # Run some Redis commands
 bin/redis-cli
 
+#Redis prompt
 set Dogs 10
 set Cats 1
 
@@ -110,9 +136,10 @@ get Cats
 
 exit
 
+# bash prompt
 # Stop Port Forwarding
 fg
-<ctl> c
+# press <ctl> c
 ```
 
 ### Create and deploy frontend web app
@@ -120,7 +147,7 @@ fg
 ```
 kubectl apply -f frontend
 
-# Get the public IP
+# Get the public IP from the service output
 watch kubectl get svc frontend
 
 # browse to public IP to test app
@@ -145,27 +172,19 @@ watch kubectl get svc,pods
 
 ### Node Resource Group
 
-Notice that AKS added a Public IP and reconfigured the Load Balancer after you deployed the frontend service. The YAML in fe2/svc.yaml specifies "LoadBalancer" as the type of service.
+Notice that AKS added another Public IP and reconfigured the Load Balancer after you deployed the frontend service. The YAML in fe2/svc.yaml specifies "LoadBalancer" as the type of service.
 
 ![screenshot](images/aks-node-fe2.PNG)
 
 ### Scale the k8s cluster to 3 nodes
 
 ```
-# this step is optional
+# this step is optional and takes a while
 # the Helm deployment will work without doing this step
 az aks scale --no-wait -g $AKSRG -n $AKSNAME -c 3
 
 # Wait for nodes to deploy
 watch kubectl get nodes,pods
-```
-
-### Install Helm cli
-
-```
-Azure Cloud Shell: already installed
-Ubuntu: sudo snap install helm --classic
-Mac: brew install kubernetes-helm
 ```
 
 ### Intialize Helm on cluster
@@ -221,15 +240,6 @@ git checkout frontend/deploy.yaml
 watch kubectl get deploy,pods
 ```
 
-### Delete original backend service
-
-```
-kubectl delete -f backend
-
-# Wait for service to be deleted
-watch kubectl get svc,pods
-```
-
 ### Node Resource Group
 
 Notice that AKS added a disk image to the node Resource Group. The following YAML sets up Redis Persistance in helm/redis.yaml
@@ -245,6 +255,15 @@ persistence:
 ```
 
 ![screenshot](images/aks-node-fe2.PNG)
+
+### Delete original backend service
+
+```
+kubectl delete -f backend
+
+# Wait for service to be deleted
+watch kubectl get svc,pods
+```
 
 ### Clean up
 
