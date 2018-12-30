@@ -89,7 +89,7 @@ az aks create -g $AKSRG -n $AKSNAME -c 1 -s $AKSSIZE
 ### What this did
 If you check the Azure portal, you will see that this command created two resource groups - AKS and MC_AKSRG_AKSNAME_AKSLOC. The AKS resource group contains the AKS service (Kubernetes Controller). The other resource group contains the k8s nodes. Here is a screen shot of what is created. You will notice that there is one Node (VM).
 
-![Initial node resource group](images/aks-node-initial.PNG)
+![Initial node resource group](images/aks-node-initial.png)
 
 ### Get the k8s credentials and save in ~/.kube/config
 
@@ -157,7 +157,7 @@ watch kubectl get svc frontend
 
 Notice that AKS added a Public IP and a Load Balancer after you deployed the frontend service. The YAML in frontend/svc.yaml specifies "LoadBalancer" as the type of service.
 
-![screenshot](images/aks-node-frontend.PNG)
+![screenshot](images/aks-node-frontend.png)
 
 ### Deploy a simple go web app
 
@@ -174,7 +174,7 @@ watch kubectl get svc,pods
 
 Notice that AKS added another Public IP and reconfigured the Load Balancer after you deployed the frontend service. The YAML in fe2/svc.yaml specifies "LoadBalancer" as the type of service.
 
-![screenshot](images/aks-node-fe2.PNG)
+![screenshot](images/aks-node-fe2.png)
 
 ### Scale the k8s cluster to 3 nodes
 
@@ -254,7 +254,7 @@ persistence:
     size: 8Gi
 ```
 
-![screenshot](images/aks-node-fe2.PNG)
+![screenshot](images/aks-node-helm.png)
 
 ### Delete original backend service
 
