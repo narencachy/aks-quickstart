@@ -1,15 +1,15 @@
 # AKS Walkthrough
 
 ## Scenario
-In this walkthrough, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on <https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough> but additional details and scenarios are covered.
+In this walkthrough of AKS basics, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on <https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough> but additional details and scenarios are covered. Note that this is a high level overview, so a lot of topics are not covered and those that are covered are high level coverage. This is designed to be the first few steps on the AKS journey.
 
 After creating the cluster, we will deploy a backend service based on the standard Redis Docker container, demonstrating how to connect to containers in the cluster via port forwarding. All deployments are done using the "declarative" approach - read more here: <https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/>
 
-Next we will deploy the web front end which uses the Redis backend to count "votes". This will automatically create an Azure Public IP address as well as an Azure Load Balancer.
+Next we will deploy the web front end (frontend) which uses the Redis backend to count votes. This will automatically create an Azure Public IP address as well as an Azure Load Balancer.
 
-Next we will deploy a simple Go Web app as a DaemonSet. This will create another Azure Public IP address and reconfigure the load balancer to support both IPs.
+Next we will deploy a simple Go Web app as a DaemonSet. This will create another Azure Public IP address and reconfigure the load balancer to support both IPs. We will also use kubectl exec to execute commands on a running container, including an interactive bash shell.
 
-Next we will scale the cluster from one node to three nodes. This will cause the Go Web App to create 3 instances as one per node is the default for DaemonSets. The other services will not change. This step is optional.
+Next we will scale the cluster from one node to three nodes. This will cause the Go Web App (fe2) to create 3 instances as one instance per node is the default for DaemonSets. The other services will not change. This step is optional.
 
 Next we will install Helm onto the cluster and use a Helm Chart to deploy a Redis cluster. We will modify the web app to use the new cluster and delete the original backend deployment.
 
@@ -21,7 +21,7 @@ The walk through takes about 45 minutes.
 
 This walk through has been tested using Azure Cloud Shell (bash), Mac terminal and Ubuntu (bash).
 
-Everything you need is installed in Azure Cloud Shell. If you're using Mac or Ubuntu, you will need to install the Azure CLI first.
+Everything you need is installed in Azure Cloud Shell. If you're using Mac or Ubuntu, you will need to install the Azure CLI first. <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>
 
 You will also need to install kubectl (the Kubernetes CLI) and Helm.
 
@@ -29,22 +29,22 @@ You will also need to install kubectl (the Kubernetes CLI) and Helm.
 # Install kubectl
 az aks install-cli
 
-#Ubuntu
-sudo snap install helm --classic
-
 #Mac
 brew install kubernetes-helm
+
+#Ubuntu
+sudo snap install helm --classic
 ```
 
 ## Let's get started
 
-AKS is not currently available in all regions, so we'll need to pick the correct region. The default in the script is Central US. We also need to verify that whatever size VMs we use for nodes are available in that region as well.
+AKS is not currently available in all regions, so we'll need to pick a region where it is available. The default in the script is Central US. We also need to verify that whatever size VMs we use for nodes are available in that region as well.
 
 ### List of regions where AKS is available
 
 <https://docs.microsoft.com/en-us/azure/aks/container-service-quotas>
 
-### List of VM Sizes in that region
+### List of VM Sizes in a region
 
 ```
 # change centralus to a different region if desired
@@ -87,7 +87,7 @@ az aks create -g $AKSRG -n $AKSNAME -c 1 -s $AKSSIZE
 ```
 
 ### What this did
-If you check the Azure portal, you will see that this command created two resource groups - AKS and MC_AKSRG_AKSNAME_AKSLOC. The AKS resource group contains the AKS service (Kubernetes Controller). The other resource group contains the k8s nodes. Here is a screen shot of what is created. You will notice that there is one Node (VM).
+If you check the Azure portal, you will see that this command created two resource groups - AKSRG and MC_AKSRG_AKSNAME_AKSLOC. The AKS resource group contains the AKS service (Controller). The other resource group contains the k8s nodes. Here is a screen shot of what is created in the nodes subscription. You will notice that there is one Node (VM).
 
 ![Initial node resource group](images/aks-node-initial.png)
 
@@ -123,6 +123,7 @@ watch kubectl get deploy,pods
 kubectl port-forward svc/backend 6379:6379 &
 
 # wait for port to be forwarded
+# need to press enter to get back to prompt
 
 # Run some Redis commands
 bin/redis-cli
@@ -170,6 +171,24 @@ watch kubectl get svc,pods
 # Browse to public IP
 ```
 
+### Execute commands on a running container
+
+Like Docker, kubectl lets you execute commands on a running container, including an interactive shell.
+
+```
+# get the full pod name for the fe2 container
+kubectl get pod fe2
+
+#replace fe2-xxxxx with the full pod name
+
+# cat the log file
+kubectl exec fe2-xxxxx -- cat logs/app.log
+
+# run an interactive bash shell
+kubectl exec -it fe2-xxxxx -- bash
+
+```
+
 ### Node Resource Group
 
 Notice that AKS added another Public IP and reconfigured the Load Balancer after you deployed the frontend service. The YAML in fe2/svc.yaml specifies "LoadBalancer" as the type of service.
@@ -196,7 +215,7 @@ kubectl apply -f helm/rbac-helm.yaml
 # Initialize Helm
 helm init --service-account tiller --upgrade
 
-# Wait for tiller to be available
+# Wait for tiller to start
 watch kubectl -n kube-system get deploy
 ```
 
@@ -236,8 +255,8 @@ kubectl apply -f frontend/deploy.yaml
 # revert the file
 git checkout frontend/deploy.yaml
 
-# Wait for deploy / pods
-watch kubectl get deploy,pods
+# Wait for pods
+watch kubectl get pods
 ```
 
 ### Node Resource Group
@@ -276,4 +295,5 @@ az group list -o table
 # Only remove this file if this is the only k8s cluster in the file. Otherwise, edit the file and remove the key information
 
 rm ~/.kube/config
+
 ```
