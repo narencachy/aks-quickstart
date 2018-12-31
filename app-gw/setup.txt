@@ -1,0 +1,32 @@
+# Set MC RG Name
+MCRG=MC_${AKSRG}_${AKSNAME}_${AKSLOC}
+
+# Get the MC_VNet name
+MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv`
+echo $MCVNET
+
+# Create the app gateway subnet
+az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet-name $MCVNET --address-prefix 10.0.0.0/24
+
+# Create the app gateway public IP
+az network public-ip create --resource-group $MCRG --name app-gw-ip 
+
+# Create the app gateway  
+az network application-gateway create \
+--name app-gw \
+-g $MCRG \
+--vnet-name $MCVNET \
+--subnet app-gw-subnet \
+--capacity 2 \
+--sku Standard_Small \
+--http-settings-cookie-based-affinity Disabled \
+--frontend-port 443 \
+--http-settings-port 80 \
+--http-settings-protocol Http \
+--public-ip-address app-gw-ip \
+--cert-file 4co.pfx \
+--cert-password "wmtatx" \
+--no-wait
+
+# Show the public IP
+az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output tsv
