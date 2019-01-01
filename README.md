@@ -11,8 +11,6 @@ Next, we will deploy a backend service based on the standard Redis Docker contai
 
 Next we will deploy the web front end (frontend) which uses the Redis backend to count votes. This will automatically create an Azure Public IP address and reconfigure the Azure Load Balancer.
 
-Next we will install Helm onto the cluster and use a Helm Chart to deploy a Redis cluster. We will modify the web app to use the new cluster and delete the original backend deployment.
-
 Next we will create a web app that uses a private load balancer and setup Azure Application Gateway to provide HTTPS offloading.
 
 Lastly, we'll delete everything.
@@ -29,17 +27,11 @@ This walk through has been tested using Azure Cloud Shell (bash), Mac terminal a
 
 Everything you need is installed in Azure Cloud Shell. If you're using Mac or Ubuntu, you will need to install the Azure CLI first. <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>
 
-You will also need to install kubectl (the Kubernetes CLI) and Helm.
+You will also need to install kubectl (the Kubernetes CLI).
 
 ```
 # Install kubectl
 az aks install-cli
-
-# Install Helm - Mac
-brew install kubernetes-helm
-
-# Install Helm - Ubuntu
-sudo snap install helm --classic
 ```
 
 ## Let's get started
@@ -204,94 +196,13 @@ Notice that AKS added a Public IP and reconfigured the Load Balancer after you d
 ![screenshot](images/aks-node-frontend.png)
 
 
-### Intialize Helm on cluster
-
-```
-# Add RBAC role for Tiller
-kubectl apply -f helm/rbac-helm.yaml
-
-# Initialize Helm
-helm init --service-account tiller --upgrade
-
-# Wait for tiller to start
-watch kubectl -n kube-system get deploy
-```
-
-### Install redis from Helm
-
-```
-helm install --values helm/redis.yaml --name backend stable/redis 
-
-# Wait for pod to be ready
-watch kubectl get pods
-
-# Start port forarding in background
-kubectl port-forward svc/backend-redis-master 6379:6379 &
-
-# Run some Redis commands
-bin/redis-cli
-
-set Dogs 100
-set Cats 2
-
-# Stop Port Forwarding
-fg
-
-# Press <ctl> c
-```
-
-### Change frontend to use Helm deployed service
-
-```
-nano frontend/deploy.yaml
-
-# Change "backend" to "backend-redis-master"
-# Save
-
-kubectl apply -f frontend/deploy.yaml
-
-# revert the file
-git checkout frontend/deploy.yaml
-
-# Wait for pods
-watch kubectl get pods
-```
-
-### Node Resource Group
-
-Notice that AKS added a disk image to the node Resource Group. The following YAML sets up Redis Persistance in helm/redis.yaml
-
-```
-persistence:
-    enabled: true
-    path: /data
-    subPath: ""
-    accessModes:
-    - ReadWriteOnce
-    size: 8Gi
-```
-
-![screenshot](images/aks-node-helm.png)
-
-### Delete original backend service
-
-```
-kubectl delete -f backend
-
-# Wait for service to be deleted
-watch kubectl get svc,pods
-```
-
 ### Setting up Azure Applicaiton Gateway
 
 This will setup an Azure Application Gateway with HTTPS support that points to a new app-gw service. The app-gw service uses an internal load balancer so the IP is only accessible from within the VNET. The template sets up automatic redirection of http to https on the Azure Application Gateway. This section is optional and takes about 45 minutes.
 
 ```
-cd app-gw
-
 # create the app
-kubectl apply -f svc.yaml
-kubectl apply -f daemon.yaml
+kubectl apply -f app-gw
 
 # wait for service / pod to start
 kubectl get svc,pods
@@ -309,6 +220,9 @@ fg
 # Create the app gateway subnet
 MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv`
 az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet-name $MCVNET --address-prefix 10.0.0.0/24
+
+# change to the setup directory
+cd app-gw/setup
 
 # Edit app-gw.json
 
@@ -336,6 +250,10 @@ az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output
 # note that cert.pfx is a self-signed cert, so you will get a warning from your browser
 
 ```
+
+### Helm walkthrough
+
+There is an optional Helm walkthrough here: helm.md
 
 ### Clean up
 
