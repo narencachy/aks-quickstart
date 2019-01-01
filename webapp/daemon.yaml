@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: fe2
+  name: webapp
 spec:
   selector:
     matchLabels:
-      app: fe2
+      app: webapp
   template:
     metadata:
       labels:
-        app: fe2
+        app: webapp
     spec:
       containers:
-      - name: fe2
+      - name: webapp
         image: bartr/go-web-aks
         resources:
           requests:

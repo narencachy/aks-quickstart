@@ -3,13 +3,15 @@
 ## Scenario
 In this walkthrough of AKS basics, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on <https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough> but additional details and scenarios are covered. Note that this is a high level overview, so a lot of topics are not covered and those that are covered are high level coverage. This is designed to be the first few steps on the AKS journey.
 
-After creating the cluster, we will deploy a backend service based on the standard Redis Docker container, demonstrating how to connect to containers in the cluster via port forwarding. All deployments are done using the "declarative" approach - read more here: <https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/>
+All deployments are done using the "declarative" approach - read more here: <https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/>
 
-Next we will deploy the web front end (frontend) which uses the Redis backend to count votes. This will automatically create an Azure Public IP address as well as an Azure Load Balancer.
+After creating the cluster,  we will deploy a simple Go Web app as a DaemonSet. This will create an Azure Public IP address and and an Azure Load Balancer. We will also use kubectl exec to execute commands on a running container, including an interactive bash shell.
 
-Next we will deploy a simple Go Web app as a DaemonSet. This will create another Azure Public IP address and reconfigure the load balancer to support both IPs. We will also use kubectl exec to execute commands on a running container, including an interactive bash shell.
+Next, we will deploy a backend service based on the standard Redis Docker container, demonstrating how to connect to containers in the cluster via port forwarding. 
 
-Next we will scale the cluster from one node to three nodes. This will cause the Go Web App (fe2) to create 3 instances as one instance per node is the default for DaemonSets. The other services will not change. This step is optional.
+Next we will deploy the web front end (frontend) which uses the Redis backend to count votes. This will automatically create an Azure Public IP address and reconfigure the Azure Load Balancer.
+
+Next we will scale the cluster from one node to three nodes. This will cause the Go Web App (webapp) to create 3 instances as one instance per node is the default for DaemonSets. The other services will not change. This step is optional.
 
 Next we will install Helm onto the cluster and use a Helm Chart to deploy a Redis cluster. We will modify the web app to use the new cluster and delete the original backend deployment.
 
@@ -64,6 +66,8 @@ AKSSIZE=Standard_D2s_v3
 AKSRG=aks
 AKSNAME=aks
 
+MCRG=MC_${AKSRG}_${AKSNAME}_${AKSLOC}
+
 # setup an alias (optional)
 alias k=kubectl
 ```
@@ -72,7 +76,7 @@ alias k=kubectl
 
 ```
 az login
-az subscrition set -s $AKSSUB
+az account set -s $AKSSUB
 ```
 
 ### Create a resource group and AKS Cluster
@@ -104,6 +108,42 @@ az aks get-credentials -g $AKSRG -n $AKSNAME
 ```
 watch kubectl get nodes
 ```
+
+### Deploy a simple go web app
+
+This is a simple web app without any dependencies
+```
+kubectl apply -f webapp
+
+# Wait for service to start
+watch kubectl get svc,pods
+
+# Browse to public IP
+```
+
+### Execute commands on a running container
+
+Like Docker, kubectl lets you execute commands on a running container, including an interactive shell.
+
+```
+# get the full pod name for the webapp container
+kubectl get pod
+
+#replace webapp-xxxxx with the full pod name
+
+# cat the log file
+kubectl exec webapp-xxxxx -- cat logs/app.log
+
+# run an interactive bash shell
+kubectl exec -it webapp-xxxxx -- bash
+
+```
+
+### Node Resource Group
+
+Notice that AKS added a Public IP and a Load Balancer after you deployed the webapp service. The YAML in webapp/svc.yaml specifies "LoadBalancer" as the type of service.
+
+![screenshot](images/aks-node-fe2.png)
 
 ### Create and deploy backend service (Redis)
 
@@ -160,40 +200,6 @@ Notice that AKS added a Public IP and a Load Balancer after you deployed the fro
 
 ![screenshot](images/aks-node-frontend.png)
 
-### Deploy a simple go web app
-
-```
-kubectl apply -f fe2
-
-# Wait for service to start
-watch kubectl get svc,pods
-
-# Browse to public IP
-```
-
-### Execute commands on a running container
-
-Like Docker, kubectl lets you execute commands on a running container, including an interactive shell.
-
-```
-# get the full pod name for the fe2 container
-kubectl get pod fe2
-
-#replace fe2-xxxxx with the full pod name
-
-# cat the log file
-kubectl exec fe2-xxxxx -- cat logs/app.log
-
-# run an interactive bash shell
-kubectl exec -it fe2-xxxxx -- bash
-
-```
-
-### Node Resource Group
-
-Notice that AKS added another Public IP and reconfigured the Load Balancer after you deployed the frontend service. The YAML in fe2/svc.yaml specifies "LoadBalancer" as the type of service.
-
-![screenshot](images/aks-node-fe2.png)
 
 ### Scale the k8s cluster to 3 nodes
 
@@ -283,6 +289,90 @@ kubectl delete -f backend
 # Wait for service to be deleted
 watch kubectl get svc,pods
 ```
+
+### Setting up Azure Applicaiton Gateway
+
+This will setup an Azure Application Gateway with HTTPS support that points to a new app-gw service. This section is optional and takes about 30 minutes.
+
+```
+cd app-gw
+
+# create the app
+k apply -f svc.yaml
+k apply -f daemon.yaml
+
+# Set MC RG Name
+MCRG=MC_${AKSRG}_${AKSNAME}_${AKSLOC}
+
+# Get the MC_VNet name
+MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv`
+echo $MCVNET
+
+# Create the app gateway subnet
+az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet-name $MCVNET --address-prefix 10.0.0.0/24
+
+# Create the app gateway public IP
+az network public-ip create --resource-group $MCRG --name app-gw-ip 
+
+# Create the app gateway with a self-signed certificate
+# This will take several minutes
+az network application-gateway create -g $MCRG \
+--name app-gw \
+--vnet-name $MCVNET \
+--subnet app-gw-subnet \
+--capacity 2 --sku Standard_Small \
+--http-settings-cookie-based-affinity Disabled \
+--frontend-port 443 \
+--http-settings-port 80 \
+--http-settings-protocol Http \
+--public-ip-address app-gw-ip \
+--cert-file 4co.pfx \
+--cert-password "wmtatx"
+
+# get the external ip for the service
+# Note that "external" applies to the k8s cluster
+#      the IP address is a private IP to the VNet
+MCADDR=`k get svc app-gw -o json | jq .status.loadBalancer.ingress[0].ip`
+MCADDR=${MCADDR//\"}
+echo $MCADDR
+
+# update the backend pool to point to the k8s IP
+az network application-gateway address-pool update \
+-g $MCRG \
+--gateway-name app-gw \
+-n appGatewayBackendPool \
+--servers $MCADDR
+
+
+# Show the public IP
+az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output tsv
+
+# Browse to https://app-gw-public-ip/
+
+# Setup http to https redirection
+# This takes a while
+
+# create a front end port on 80
+az network application-gateway frontend-port create -g $MCRG --gateway-name app-gw --port 80 --name httpPort
+
+# create an http listener on 80
+az network application-gateway http-listener create -g $MCRG --gateway-name app-gw \
+--frontend-ip appGatewayFrontendIP --frontend-port httpPort \
+--name forceHttpsListener
+
+# create a redirect config 
+az network application-gateway redirect-config create -g $MCRG --gateway-name app-gw \
+--name httpToHttps --type Permanent \
+--target-listener appGatewayHttpListener \
+--include-path true --include-query-string true
+
+# Apply the redirect config to the listener  
+az network application-gateway rule create -g $MCRG --gateway-name app-gw \
+--name rule2 --http-listener forceHttpsListener \
+--rule-type Basic --redirect-config httpToHttps
+  
+```
+
 
 ### Clean up
 

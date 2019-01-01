@@ -30,3 +30,14 @@ az network application-gateway create \
 
 # Show the public IP
 az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output tsv
+
+# get the external ip
+MCADDR=`k get svc app-gw -o json | jq .status.loadBalancer.ingress[0].ip`
+MCADDR=${MCADDR//\"}
+echo $MCADDR
+
+az network application-gateway address-pool update \
+-g $MCRG \
+--gateway-name app-gw \
+-n appGatewayBackendPool \
+--servers $MCADDR
