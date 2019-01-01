@@ -298,8 +298,21 @@ This will setup an Azure Application Gateway with HTTPS support that points to a
 cd app-gw
 
 # create the app
-k apply -f svc.yaml
-k apply -f daemon.yaml
+kubectl apply -f svc.yaml
+kubectl apply -f daemon.yaml
+
+# wait for service / pod to start
+kubectl get svc,pods
+
+# setup port forwarding for the web app
+kubectl port-forward svc/app-gw 8080:80 &
+
+# test the web app
+curl localhost:8080
+
+# end port forwarding
+fg
+# press <ctl> c
 
 # Set MC RG Name
 MCRG=MC_${AKSRG}_${AKSNAME}_${AKSLOC}
@@ -337,12 +350,7 @@ MCADDR=${MCADDR//\"}
 echo $MCADDR
 
 # update the backend pool to point to the k8s IP
-az network application-gateway address-pool update \
--g $MCRG \
---gateway-name app-gw \
--n appGatewayBackendPool \
---servers $MCADDR
-
+az network application-gateway address-pool update -g $MCRG --gateway-name app-gw -n appGatewayBackendPool --servers $MCADDR
 
 # Show the public IP
 az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output tsv
@@ -355,16 +363,16 @@ az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output
 # create a front end port on 80
 az network application-gateway frontend-port create -g $MCRG --gateway-name app-gw --port 80 --name httpPort
 
-# create an http listener on 80
-az network application-gateway http-listener create -g $MCRG --gateway-name app-gw \
---frontend-ip appGatewayFrontendIP --frontend-port httpPort \
---name forceHttpsListener
-
 # create a redirect config 
 az network application-gateway redirect-config create -g $MCRG --gateway-name app-gw \
 --name httpToHttps --type Permanent \
 --target-listener appGatewayHttpListener \
 --include-path true --include-query-string true
+
+# create an http listener on 80
+az network application-gateway http-listener create -g $MCRG --gateway-name app-gw \
+--frontend-ip appGatewayFrontendIP --frontend-port httpPort \
+--name forceHttpsListener
 
 # Apply the redirect config to the listener  
 az network application-gateway rule create -g $MCRG --gateway-name app-gw \
