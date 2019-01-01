@@ -5,11 +5,11 @@
     "addressPrefix": "10.0.0.0/8",
     "subnetPrefix": "10.0.0.0/24",
 
-    "backendIpAddress": "10.0.1.10",
+    "backendIpAddress": "10.240.0.5",
 
     "agName": "app-gw",
     "pipName": "app-gw-ip",
-    "vnetName": "aks-vnet",
+    "vnetName": "aks-vnet-22918071",
     "subnetName": "app-gw-subnet",
 
     "location": "[resourceGroup().location]",
