@@ -88,7 +88,8 @@
                     "type": "Microsoft.Network/applicationGateways/sslCertificates",
                     "name": "[concat(variables('agName'),'-sslCert')]",
                     "properties": {
-                        "publicCertData": "MIIEAwYJKoZIhvcNAQcCoIID9DCCA/ACAQExADALBgkqhkiG9w0BBwGgggPYMIID1DCCArygAwIBAgIJAPkfJbmlIVkeMA0GCSqGSIb3DQEBCwUAMH8xCzAJBgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEPMA0GA1UEBwwGQXVzdGluMQ0wCwYDVQQKDAQ0LmNvMQ0wCwYDVQQLDAQ0LmNvMQ8wDQYDVQQDDAYqLjQuY28xIDAeBgkqhkiG9w0BCQEWEWJhcnRyQG91dGxvb2suY29tMB4XDTE4MTIzMTIxMzAzM1oXDTE5MTIzMTIxMzAzM1owfzELMAkGA1UEBhMCVVMxDjAMBgNVBAgMBVRleGFzMQ8wDQYDVQQHDAZBdXN0aW4xDTALBgNVBAoMBDQuY28xDTALBgNVBAsMBDQuY28xDzANBgNVBAMMBiouNC5jbzEgMB4GCSqGSIb3DQEJARYRYmFydHJAb3V0bG9vay5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDZ+ApkmFeD7KvyvnYlQm88sJ/TrCyApds8kt4768OJrg/S72Gc9TQOxXoXxCtthdUK5L7PXejLqQuCtgN0z+L0TZ/4Lz6hujdIlZFoIOesMFOS8BuKaTUqIzpTP2Lkn3xSkHLwMHfPBzTQm8NcWTfms8vr4HjHMXIjdSFg3RT22N2ncb67QfooW04F91NAzuGWT131fDX0zwO3t/3/aLwXkW2kgxgmaaQsnWldP8Xm3xYJpVJ248jcORsvQiGSsuoarpyVEg9A5++RYDjRDmlZkBfc0U20RJVduVuAj2iBZx4Eku0q2diSbLUqLCPKB/Itn+6blymKb5w/6rcs4/hTAgMBAAGjUzBRMB0GA1UdDgQWBBTIcyihprLWxb1s/qPLqLUG7zPgVDAfBgNVHSMEGDAWgBTIcyihprLWxb1s/qPLqLUG7zPgVDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQC3WPf6ABBL+UEsltKlu5qO4JZlhEo39p0TIYbYYuy7zOYot+ZFD40WAkZ2/QdeYj7wv2XgPC6JxswGIj1t+OsgAlQW/gxpjAYpNUhwo5NOCrEorJeSpcuRW2SjchKNaoi6wONoSgtMgbBb1zuW4ZWlDfdphRwTGqUtPzn1sRfGh9OolxesMz6QaH70p6VzSIW+rWn4sow0sFyICqeWdzp2/zDDXPuEmSYp9uN+KrUVJtrDn4/zQcO2qpFZfgDSuwf93W2JOEhzaRWkdjvN7ZCu4yfMnlC/qskFMROkIeuYOUqKUTA2rFjBL8emWoELGj9oMT1nC3WFXggJEk6o3dNAMQA="
+                        "data": "MIIEAwYJKoZIhvcNAQcCoIID9DCCA/ACAQExADALBgkqhkiG9w0BBwGgggPYMIID1DCCArygAwIBAgIJAPkfJbmlIVkeMA0GCSqGSIb3DQEBCwUAMH8xCzAJBgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEPMA0GA1UEBwwGQXVzdGluMQ0wCwYDVQQKDAQ0LmNvMQ0wCwYDVQQLDAQ0LmNvMQ8wDQYDVQQDDAYqLjQuY28xIDAeBgkqhkiG9w0BCQEWEWJhcnRyQG91dGxvb2suY29tMB4XDTE4MTIzMTIxMzAzM1oXDTE5MTIzMTIxMzAzM1owfzELMAkGA1UEBhMCVVMxDjAMBgNVBAgMBVRleGFzMQ8wDQYDVQQHDAZBdXN0aW4xDTALBgNVBAoMBDQuY28xDTALBgNVBAsMBDQuY28xDzANBgNVBAMMBiouNC5jbzEgMB4GCSqGSIb3DQEJARYRYmFydHJAb3V0bG9vay5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDZ+ApkmFeD7KvyvnYlQm88sJ/TrCyApds8kt4768OJrg/S72Gc9TQOxXoXxCtthdUK5L7PXejLqQuCtgN0z+L0TZ/4Lz6hujdIlZFoIOesMFOS8BuKaTUqIzpTP2Lkn3xSkHLwMHfPBzTQm8NcWTfms8vr4HjHMXIjdSFg3RT22N2ncb67QfooW04F91NAzuGWT131fDX0zwO3t/3/aLwXkW2kgxgmaaQsnWldP8Xm3xYJpVJ248jcORsvQiGSsuoarpyVEg9A5++RYDjRDmlZkBfc0U20RJVduVuAj2iBZx4Eku0q2diSbLUqLCPKB/Itn+6blymKb5w/6rcs4/hTAgMBAAGjUzBRMB0GA1UdDgQWBBTIcyihprLWxb1s/qPLqLUG7zPgVDAfBgNVHSMEGDAWgBTIcyihprLWxb1s/qPLqLUG7zPgVDAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQC3WPf6ABBL+UEsltKlu5qO4JZlhEo39p0TIYbYYuy7zOYot+ZFD40WAkZ2/QdeYj7wv2XgPC6JxswGIj1t+OsgAlQW/gxpjAYpNUhwo5NOCrEorJeSpcuRW2SjchKNaoi6wONoSgtMgbBb1zuW4ZWlDfdphRwTGqUtPzn1sRfGh9OolxesMz6QaH70p6VzSIW+rWn4sow0sFyICqeWdzp2/zDDXPuEmSYp9uN+KrUVJtrDn4/zQcO2qpFZfgDSuwf93W2JOEhzaRWkdjvN7ZCu4yfMnlC/qskFMROkIeuYOUqKUTA2rFjBL8emWoELGj9oMT1nC3WFXggJEk6o3dNAMQA=",
+                        "password": "wmtatx"
                     }
                 }
             ],
@@ -163,7 +164,7 @@
                         },
                         "protocol": "Https",
                         "sslCertificate": {
-                            "id": "[concat(variables('agRef'), '/sslCertificates/app-gwSslCert')]"
+                            "id": "[concat(variables('agRef'), '/sslCertificates/app-gw-sslCert')]"
                         },
                         "requireServerNameIndication": false
                     },
