@@ -2,15 +2,15 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   
   "variables": {
-    "addressPrefix": "10.0.0.0/8",
-    "subnetPrefix": "10.0.0.0/24",
-
+    "vnetName": "aks-vnet-22918071",
     "backendIpAddress": "10.240.0.5",
 
     "agName": "app-gw",
     "pipName": "app-gw-ip",
-    "vnetName": "aks-vnet-22918071",
     "subnetName": "app-gw-subnet",
+
+    "addressPrefix": "10.0.0.0/8",
+    "subnetPrefix": "10.0.0.0/24",
 
     "location": "[resourceGroup().location]",
   
