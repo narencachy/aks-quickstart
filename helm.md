@@ -19,6 +19,18 @@ In this walkthrough we will install Helm onto the cluster and use a Helm Chart t
 
 This walk through takes about 20 minutes.
 
+### Set environment variables
+
+The script uses these environment variables extensively
+
+```
+# Clone this repo
+git clone https://github.com/bartr/aks-quickstart
+
+# edit setenv to use your values
+source setenv
+```
+
 ### Intialize Helm on cluster
 
 ```

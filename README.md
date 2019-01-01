@@ -54,18 +54,11 @@ az vm list-sizes -l centralus -o table | grep s_v3
 The script uses these environment variables extensively
 
 ```
-# Change these if desired
-AKSSUB=k8s
-AKSLOC=centralus
-AKSSIZE=Standard_D2s_v3
+# Clone this repo
+git clone https://github.com/bartr/aks-quickstart
 
-AKSRG=aks
-AKSNAME=aks
-
-MCRG=MC_${AKSRG}_${AKSNAME}_${AKSLOC}
-
-# setup an alias (optional)
-alias k=kubectl
+# edit setenv to use your values
+source setenv
 ```
 
 ### Login and select your Azure subscription
@@ -140,7 +133,7 @@ kubectl exec -it webapp-xxxxx -- bash
 
 Notice that AKS added a Public IP and a Load Balancer after you deployed the webapp. The YAML in webapp/svc.yaml specifies "LoadBalancer" as the type of service.
 
-![screenshot](images/aks-node-fe2.png)
+![screenshot](images/aks-node-webapp.png)
 
 ### Create and deploy backend service (Redis)
 
@@ -195,7 +188,6 @@ Notice that AKS added a Public IP and reconfigured the Load Balancer after you d
 
 ![screenshot](images/aks-node-frontend.png)
 
-
 ### Setting up Azure Applicaiton Gateway
 
 This will setup an Azure Application Gateway with HTTPS support that points to a new app-gw service. The app-gw service uses an internal load balancer so the IP is only accessible from within the VNET. The template sets up automatic redirection of http to https on the Azure Application Gateway. This section is optional and takes about 45 minutes.
@@ -236,7 +228,7 @@ kubectl get svc app-gw -o json | jq .status.loadBalancer.ingress[0].ip
 cat cert.pfx | base64 -w 0
 
 # Deploy app-gw.json
-az group deploy create --no-wait --name app-gw-deployment -g $MCRG --template-file app-gw.json
+az group deployment create --name app-gw-deployment -g $MCRG --template-file app-gw.json
 
 # Check on the deployment
 # Generally takes 15-30 minutes
@@ -250,6 +242,12 @@ az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output
 # note that cert.pfx is a self-signed cert, so you will get a warning from your browser
 
 ```
+
+### Final Resource Group
+
+Notice that AKS added a Public IP and reconfigured the Load Balancer after you deployed the frontend service. The YAML in frontend/svc.yaml specifies "LoadBalancer" as the type of service.
+
+![screenshot](images/aks-node-final.png)
 
 ### Helm walkthrough
 
