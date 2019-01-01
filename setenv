@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # set these
-export AKSSUB k8s
-export AKSRG aks
-export AKSNAME aks
+export AKSSUB=k8s
+export AKSRG=aks
+export AKSNAME=aks
 
 # Change these if desired
-export AKSLOC centralus
-export AKSSIZE Standard_D2s_v3
+export AKSLOC=centralus
+export AKSSIZE=Standard_D2s_v3
 
-export MCRG MC_${AKSRG}_${AKSNAME}_${AKSLOC}
+export MCRG=MC_${AKSRG}_${AKSNAME}_${AKSLOC}
 
 # setup an alias (optional)
-alias=k kubectl
+alias k=kubectl
 
