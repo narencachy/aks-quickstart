@@ -14,6 +14,7 @@
     "vnetName": "aks-vnet",
     "subnetName": "app-gw-subnet",
 
+    "vnetRef": "[resourceId('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
     "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', variables('vnetName'), variables('subnetName'))]",
     "pipRef": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
     "agRef": "[resourceId('Microsoft.Network/applicationGateways', variables('agName'))]"
@@ -237,8 +238,8 @@
             ]
         },
         "dependsOn": [
-            "[variables('subnetRef')]",
-            "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
+            "[variables('vnetRef')]",
+            "[variables('pipRef')]"
         ]
     }
   ]
