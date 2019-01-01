@@ -7,13 +7,13 @@
 
     "backendIpAddress": "10.0.1.10",
 
-    "location": "[resourceGroup().location]",
-  
     "agName": "app-gw",
     "pipName": "app-gw-ip",
     "vnetName": "aks-vnet",
     "subnetName": "app-gw-subnet",
 
+    "location": "[resourceGroup().location]",
+  
     "vnetRef": "[resourceId('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
     "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', variables('vnetName'), variables('subnetName'))]",
     "pipRef": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]",
@@ -61,6 +61,8 @@
         ]
       }
     },
+    
+    
     {
         "type": "Microsoft.Network/applicationGateways",
         "name": "[variables('agName')]",
@@ -78,7 +80,6 @@
                 {
                     "name": "appGatewayFrontendIP",
                     "properties": {
-                        "provisioningState": "Succeeded",
                         "subnet": {
                             "id": "[variables('subnetRef')]"
                         }
@@ -207,7 +208,7 @@
                     "type": "Microsoft.Network/applicationGateways/requestRoutingRules"
                 },
                 {
-                    "name": "rule2",
+                    "name": "forceHttpsRule",
                     "properties": {
                         "ruleType": "Basic",
                         "httpListener": {
@@ -233,7 +234,7 @@
                         "includeQueryString": true,
                         "requestRoutingRules": [
                             {
-                                "id": "[concat(variables('agRef'), '/requestRoutingRules/rule2')]"
+                                "id": "[concat(variables('agRef'), '/requestRoutingRules/forceHttpsRule')]"
                             }
                         ]
                     },
