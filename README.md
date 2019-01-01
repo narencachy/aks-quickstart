@@ -1,7 +1,8 @@
-# AKS Walkthrough
+# AKS Walk Through
+#### 100 level
 
 ## Scenario
-In this walkthrough of AKS basics, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on <https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough> but additional details and scenarios are covered. Note that this is a high level overview, so a lot of topics are not covered and those that are covered are high level coverage. This is designed to be the first few steps on the AKS journey.
+In this walk through of AKS basics, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on <https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough> but additional details and scenarios are covered. Note that this is a high level overview, so a lot of topics are not covered and those that are covered are high level. This is designed to be the first few steps on the AKS journey. 
 
 All deployments are done using the "declarative" approach - read more here: <https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/>
 
@@ -17,9 +18,9 @@ Lastly, we'll delete everything.
 
 The full walk through takes about 90 minutes.
 
-## The screen shots are out of date
-
-The screen shots are out of date with the walkthrough and need to be updated. Feel free to create a PR :)
+### Additional Reading
+* AKS: <https://docs.microsoft.com/en-us/azure/aks/>
+* Kubernetes: <https://kubernetes.io/docs/home/>
 
 ## Prerequisites
 
@@ -36,22 +37,11 @@ az aks install-cli
 
 ## Let's get started
 
-AKS is not currently available in all regions, so we'll need to pick a region where it is available. The default in the script is Central US. We also need to verify that whatever size VMs we use for nodes are available in that region as well.
-
-### List of regions where AKS is available
-
-<https://docs.microsoft.com/en-us/azure/aks/container-service-quotas>
-
-### List of VM Sizes in a region
-
-```
-# change centralus to a different region if desired
-az vm list-sizes -l centralus -o table | grep s_v3
-```
-
 ### Set environment variables
 
 The script uses these environment variables extensively
+
+AKS is not currently available in all regions, so we'll need to pick a region where it is available. The default in setenv is CentralUS. We also need to verify that whatever size VMs we use for nodes are available in that region as well. The default in setenv is Standard_D2s_v3. You can change these by editing setenv.
 
 ```
 # Clone this repo
@@ -61,9 +51,20 @@ git clone https://github.com/bartr/aks-quickstart
 source setenv
 ```
 
+### List of regions where AKS is available
+
+<https://docs.microsoft.com/en-us/azure/aks/container-service-quotas>
+
+### List of VM Sizes in your region
+
+```
+az vm list-sizes -l $AKSLOC -o table | grep s_v3
+```
+
 ### Login and select your Azure subscription
 
 ```
+# Optional if you're already logged in and have the subscription default set
 az login
 az account set -s $AKSSUB
 ```
@@ -89,18 +90,18 @@ If you check the Azure portal, you will see that this command created two resour
 ```
 az aks get-credentials -g $AKSRG -n $AKSNAME
 
-# Note: if you run this quickstart repeatedly, you will need to edit / delete ~/.kube/control before running this command
+# Note: if you run this walk through repeatedly, you will need to edit / delete ~/.kube/control before running this command
 ```
 
-### Wait for the node(s) to be ready
+### Wait for the node to be ready
 
 ```
 watch kubectl get nodes
 ```
 
-### Deploy a simple go web app
+### Deploy a simple web app
 
-This is a simple web app without any dependencies. Because this is a DaemonSet, there will be 3 instances running (one per node). The Azure Load Balancer sends traffic to each pod.
+This is a simple web app without any dependencies. Because this is a DaemonSet, there will be 3 instances running (one per node). AKS will create an Azure Load Balancer and a Public IP Address. The Azure Load Balancer sends traffic to each pod. Node that Azure Load Balancer keeps the TCP connection alive, so you will connect to the same node for up to 5 minutes if you hit refresh.
 
 ```
 kubectl apply -f webapp
@@ -249,9 +250,9 @@ Notice that AKS added a Public IP and reconfigured the Load Balancer after you d
 
 ![screenshot](images/aks-node-final.png)
 
-### Helm walkthrough
+### Helm Walk Through
 
-There is an optional Helm walkthrough here: helm.md
+There is an optional Helm walk through here: helm.md
 
 ### Clean up
 
