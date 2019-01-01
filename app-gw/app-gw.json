@@ -237,7 +237,7 @@
             ]
         },
         "dependsOn": [
-            "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]",
+            "[variables('subnetRef')]",
             "[resourceId('Microsoft.Network/publicIPAddresses', variables('pipName'))]"
         ]
     }
