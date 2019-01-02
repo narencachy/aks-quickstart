@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: webapp
+  name: nginx-go
 spec:
   selector:
     matchLabels:
-      app: webapp
+      app: nginx-go
   template:
     metadata:
       labels:
-        app: webapp
+        app: nginx-go
     spec:
       containers:
-      - name: webapp
+      - name: nginx-go
         image: bartr/nginx-go
         resources:
           requests:
