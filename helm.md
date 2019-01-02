@@ -98,8 +98,6 @@ persistence:
     size: 8Gi
 ```
 
-![screenshot](images/aks-node-helm.png)
-
 ### Delete original backend service
 
 ```
