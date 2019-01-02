@@ -47,10 +47,19 @@
         "scale": null,
         "properties": {
             "sku": {
-                "name": "Standard_Small",
-                "tier": "Standard",
-                "capacity": 2
+                "name": "WAF_Medium",
+                "tier": "WAF",
+                "capacity": 1
             },
+
+            "webApplicationFirewallConfiguration": {
+                      "enabled": "true",
+                      "firewallMode": "Detection",
+                      "ruleSetType": "OWASP",
+                      "ruleSetVersion": "3.0",
+                      "disabledRuleGroups": []
+            },
+
             "gatewayIPConfigurations": [
                 {
                     "name": "appGatewayFrontendIP",
