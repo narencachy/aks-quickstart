@@ -103,6 +103,8 @@ watch kubectl get nodes
 
 This is a simple web app without any dependencies. Because this is a DaemonSet, there will be 3 instances running (one per node). AKS will create an Azure Load Balancer and a Public IP Address. The Azure Load Balancer sends traffic to each pod. Node that Azure Load Balancer keeps the TCP connection alive, so you will connect to the same node for up to 5 minutes if you hit refresh.
 
+The source code for the web app is available here: <https://github.com/bartr/go-web-aks>  The Application Gateway walk through uses the same web app.
+
 ```
 kubectl apply -f webapp
 
