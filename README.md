@@ -192,9 +192,9 @@ Notice that AKS added a Public IP and reconfigured the Load Balancer as part of 
 
 ![screenshot](images/aks-node-frontend.png)
 
-### Setting up Azure Applicaiton Gateway
+### Setting up Azure Application Gateway
 
-These steps will setup an Azure Application Gateway with HTTPS support that points to a new app-gw service. The app-gw service uses an internal load balancer so the IP is only accessible from within the VNET. The template sets up automatic redirection of http to https on the Azure Application Gateway. This section is optional and takes about 30 minutes.
+These steps will setup an Azure Application Gateway with WAF support that points to a new app-gw service. Application Gateway provides https termination services as well as WAF protection to the k8s service. The app-gw service uses an internal load balancer so the IP is only accessible from within the VNET. This is a more secure way of exposing public endpoints. The template sets up automatic redirection of http to https on the Azure Application Gateway so all requests that reach the endpoint are over https. This section is optional and takes about 30 minutes.
 
 ```
 # create the app
@@ -203,10 +203,10 @@ kubectl apply -f app-gw
 # wait for service / pod to start
 kubectl get svc,pods
 
+# test the web app
 # setup port forwarding for the web app
 kubectl port-forward svc/app-gw 8080:80 &
 
-# test the web app
 curl localhost:8080
 
 # end port forwarding
@@ -214,6 +214,7 @@ fg
 # press <ctl> c
 
 # Create the app gateway subnet
+# This has to be an empty subnet
 MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv`
 az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet-name $MCVNET --address-prefix 10.0.0.0/24
 
@@ -232,10 +233,10 @@ kubectl get svc app-gw -o json | jq .status.loadBalancer.ingress[0].ip
 cat cert.pfx | base64 -w 0
 
 # Deploy app-gw.json
+# This takes 15-30 minutes
 az group deployment create --name app-gw-deployment -g $MCRG --template-file app-gw.json
 
-# Check on the deployment
-# Generally takes 15-30 minutes
+# Make sure app gateway is "ready"
 az network application-gateway show -g $MCRG --name app-gw -o table
 
 # get the app gateway public IP address
@@ -244,6 +245,7 @@ az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output
 # Browse to http://app-gw-public-ip/
 # you should be automatically redirected to https
 # note that cert.pfx is a self-signed cert, so you will get a warning from your browser
+# the cert is setup for 4.co and www.4.co, so you can add an entry to your hosts file with the IP (optional)
 
 ```
 
