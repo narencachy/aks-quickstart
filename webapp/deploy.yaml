@@ -17,10 +17,10 @@ spec:
         image: bartr/go-web-aks
         resources:
           requests:
-            cpu: 100m
+            cpu: 250m
             memory: 128Mi
           limits:
-            cpu: 250m
+            cpu: 500m
             memory: 256Mi
         ports:
           - containerPort: 8080
