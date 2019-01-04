@@ -32,13 +32,11 @@ spec:
           periodSeconds: 5
         livenessProbe:
           httpGet:
-            path: /healthz
+            path: /healthprobe
             port: 8080
           initialDelaySeconds: 300
           periodSeconds: 5
         env:
-        - name: REDIS
-          value: "backend"
         - name: MY_NODE_NAME
           valueFrom:
             fieldRef:
