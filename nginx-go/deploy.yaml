@@ -24,6 +24,19 @@ spec:
         ports:
         - containerPort: 80
         - containerPort: 443
+        livenessProbe:
+          exec:
+            command:
+              - cat
+              - /root/app/logs/app.log
+          initialDelaySeconds: 60
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthprobe
+            port: 8080
+          initialDelaySeconds: 300
+          periodSeconds: 5
         env:
         - name: MY_NODE_NAME
           valueFrom:
