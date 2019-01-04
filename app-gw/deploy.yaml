@@ -1,8 +1,9 @@
 apiVersion: apps/v1
-kind: DaemonSet
+kind: Deployment
 metadata:
   name: app-gw
 spec:
+  replicas: 2
   selector:
     matchLabels:
       app: app-gw
