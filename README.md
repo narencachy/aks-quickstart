@@ -97,41 +97,209 @@ az aks get-credentials -g $AKSRG -n $AKSNAME
 ### Wait for the node to be ready
 
 ```
-watch kubectl get nodes
+kubectl get nodes
 ```
+
+### Some basic commands
+
+If you're familiar with Docker, many of these commands will look similar.
+
+kubectl is the Kubernetes CLI. setenv creates the "k" alias to make typing easier.
+
+```
+# see what's running
+kubectl get all
+
+# Run an app (technically, create a deployment)
+kubectl create deployment goweb --image=bartr/go-web-aks
+
+# see what was created
+kubectl get all
+
+# get the name of the app
+kubectl get pods
+
+# You should see something like this
+#NAME                      READY   STATUS    RESTARTS   AGE
+#goweb-64b448b6b8-blfsk    1/1     Running   0          99s
+
+# set an environment variable with the name from your output
+GW=goweb-64b448b6b8-blfsk
+
+# Check the logs
+kubectl logs $GW
+
+# run shell commands
+kubectl exec $GW -- pwd
+kubectl exec $GW -- ls -al www
+
+# check the local website
+# curl has to be installed in the container
+kubectl exec $GW -- curl localhost:8080
+kubectl exec $GW -- curl localhost:8080/healthcheck
+
+# check the logs again
+kubectl logs $GW
+
+# run an interactive shell
+kubectl exec -it $GW -- sh
+
+# run some shell commands
+# the container uses a very small version of Alpine, so few utilities exist
+
+exit
+```
+
+### Port forwarding
+
+You can use port forwarding to expose the port to the local shell. This will work on a deployment, service, pod, etc.
+
+```
+# start port forwarding in the background
+kubectl port-forward deploy/goweb 8080:8080 &
+
+# this will also work
+kubectl port-forward $GW 8080:8080 &
+
+# run curl
+curl localhost:8080
+curl localhost:8080/healthcheck
+
+# bring to foreground and cancel
+fg
+# press <ctl> c to end port forwarding
+
+# check the logs again
+kubectl logs $GW
+
+```
+
+### Exposing the web app to the cluster
+
+```
+# First, create a second service
+kubectl create deployment goweb --image=bartr/go-web-aks
+
+# Create a service (ClusterIP) that exposes the web site on port 80
+kubectl expose deployment gw --port=8080 --target-port=8080
+
+# test the new web site
+kubectl exec -it $GW -- sh
+
+curl gw
+curl gw/healthcheck
+
+exit
+
+```
+
+### Delete the deployments
+
+```
+kubectl delete deploy goweb
+kubectl delete svc,deploy gw
+kubectl get all
+
+```
+
+### Declarative Deployments
+
+The preferred way to use k8s is to use the declarative approach which uses yaml files. Since yaml files are text files, they are easy to manage with source code control which makes building a cluster from scratch repeatable.
+
+Read more here: <https://kubernetes.io/docs/concepts/overview/object-management-kubectl/declarative-config/>
+
+k8s has the ability to generate starter yaml files for you.
+
+```
+# generate a simple yaml file
+kubectl create deployment goweb --image=bartr/go-web-aks --dry-run -o yaml
+```
+
+Output should look like this
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: goweb
+  name: goweb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: goweb
+  template:
+    metadata:
+      labels:
+        app: goweb
+    spec:
+      containers:
+      - image: bartr/go-web-aks
+        name: go-web-aks
+
+```
+
+Generate sample yaml for a LoadBalancer
+
+```
+kubectl create svc loadbalancer goweb --tcp=80:8080 --dry-run -o yaml
+```
+
+Output should look like this
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: goweb
+  name: goweb
+spec:
+  ports:
+  - name: web
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: goweb
+  type: LoadBalancer
+
+```
+
 
 ### Deploy a simple web app
 
-This is a simple web app without any dependencies. Because this is a DaemonSet, there will be 3 instances running (one per node). AKS will create an Azure Load Balancer and a Public IP Address. The Azure Load Balancer sends traffic to each pod. Note that Azure Load Balancer keeps the TCP connection alive, so you will connect to the same node for up to 5 minutes if you hit refresh.
+This is a simple web app without any dependencies. Because replicas is set to 3, there will be 3 instances running. AKS will create an Azure Load Balancer and a Public IP Address. The Azure Load Balancer sends traffic to each pod. Note that Azure Load Balancer keeps the TCP connection alive, so you will connect to the same node for up to 5 minutes if you hit refresh.
 
 The source code for the web app is available here: <https://github.com/bartr/go-web-aks>  The Application Gateway walk through uses the same web app.
+
 
 ```
 kubectl apply -f webapp
 
 # Wait for service to start
-watch kubectl get svc,pods
+kubectl get svc,pods
 
 # Browse to public IP
 ```
 
-### Execute commands on a running container
-
-Like Docker, kubectl lets you execute commands on a running container, including an interactive shell.
+If you look in the webapp directory, you will notice that the service definition and the deployment are in separate files. Since the service creates an Azure Load Balancer, having the files separate makes it easy to modify a deployment without affecting the Azure Load Balancer.
 
 ```
-# get the full pod name for one of the webapp pods
-kubectl get pod
+# Delete the deployment (but not the service)
+kubectl delete -f webapp/deploy.yaml
+kubectl get pods
 
-#replace webapp-xxxxx with the full pod name
+# Redeploy the web app
+kubectl apply -f webapp
 
-# cat the log file
-kubectl exec webapp-xxxxx -- cat logs/app.log
+# Notice that the service (public IP) doesn't change but the pods (deployment) does
 
-# run an interactive bash shell
-kubectl exec -it webapp-xxxxx -- bash
+kubectl get svc,pods
 
 ```
+
 
 ### Node Resource Group
 
@@ -139,20 +307,20 @@ Notice that AKS added a Public IP and Load Balancer during deployment. The YAML 
 
 ![screenshot](images/aks-node-webapp.png)
 
-### Create and deploy backend service (Redis)
+### Create and deploy a Redis server
 
 ```
-kubectl apply -f backend
+kubectl apply -f redis
 
 # Wait for the app to start
-watch kubectl get deploy,pods
+kubectl get deploy,pods
 ```
 
 ## Connect to the Redis container
 
 ```
 # Start port forarding in background
-kubectl port-forward svc/backend 6379:6379 &
+kubectl port-forward svc/redis 6379:6379 &
 
 # wait for port to be forwarded
 # need to press enter to get back to prompt
@@ -177,11 +345,13 @@ fg
 
 ### Create and deploy frontend web app
 
-```
-kubectl apply -f frontend
+This is a Java web app that uses the Redis server for persistance.
 
-# Get the public IP from the service output
-watch kubectl get svc frontend
+```
+kubectl apply -f votes
+
+# Get the public IP
+kubectl get svc votes
 
 # browse to public IP to test app
 ```
@@ -205,7 +375,7 @@ kubectl get svc,pods
 
 # test the web app
 # setup port forwarding for the web app
-kubectl port-forward svc/app-gw 8080:80 &
+kubectl port-forward svc/app-gw 8080:8080 &
 
 curl localhost:8080
 
