@@ -427,10 +427,6 @@ Notice that AKS added a Public IP and reconfigured the Load Balancer after you d
 
 ![screenshot](images/aks-node-final.png)
 
-### Helm Walk Through
-
-There is an optional Helm walk through here: helm.md
-
 ### Clean up
 
 ```
