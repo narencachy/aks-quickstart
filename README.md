@@ -94,7 +94,7 @@ az aks get-credentials -g $AKSRG -n $AKSNAME
 # Note: if you run this walk through repeatedly, you will need to edit / delete ~/.kube/control before running this command
 ```
 
-### Wait for the node to be ready
+### Wait for the nodes to be ready
 
 ```
 kubectl get nodes
@@ -120,8 +120,8 @@ kubectl get all
 kubectl get pods
 
 # You should see something like this
-#NAME                      READY   STATUS    RESTARTS   AGE
-#goweb-64b448b6b8-blfsk    1/1     Running   0          99s
+NAME                      READY   STATUS    RESTARTS   AGE
+goweb-64b448b6b8-blfsk    1/1     Running   0          99s
 
 # set an environment variable with the name from your output
 GW=goweb-64b448b6b8-blfsk
@@ -177,11 +177,11 @@ kubectl logs $GW
 ### Exposing the web app to the cluster
 
 ```
-# First, create a second service
-kubectl create deployment goweb --image=bartr/go-web-aks
+# Create a second deployment
+kubectl create deployment gw --image=bartr/go-web-aks
 
 # Create a service (ClusterIP) that exposes the web site on port 80
-kubectl expose deployment gw --port=8080 --target-port=8080
+kubectl expose deployment gw --port=8080 --target-port=8080 --name gw
 
 # test the new web site
 kubectl exec -it $GW -- sh
