@@ -184,8 +184,10 @@ kubectl create deployment gw --image=bartr/go-web-aks
 kubectl expose deployment gw --port=8080 --target-port=8080 --name gw
 
 # test the new web site
+# start a shell on goweb
 kubectl exec -it $GW -- sh
 
+# curl the service / clusterIP
 curl gw
 curl gw/healthcheck
 
