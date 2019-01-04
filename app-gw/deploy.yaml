@@ -22,23 +22,13 @@ spec:
             cpu: 250m
             memory: 256Mi
         ports:
-        - containerPort: 80
+        - containerPort: 8080
         env:
-        - name: REDIS
-          value: "backend"
         - name: MY_NODE_NAME
           valueFrom:
             fieldRef:
                 fieldPath: spec.nodeName
-        - name: MY_NODE_IP
-          valueFrom:
-            fieldRef:
-                fieldPath: status.hostIP
         - name: MY_POD_NAME
           valueFrom:
             fieldRef:
                 fieldPath: metadata.name
-        - name: MY_POD_IP
-          valueFrom:
-            fieldRef:
-                fieldPath: status.podIP
