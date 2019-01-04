@@ -345,7 +345,7 @@ fg
 # press <ctl> c
 ```
 
-### Create and deploy frontend web app
+### Create and deploy the votes web app
 
 This is a Java web app that uses the Redis server for persistance.
 
@@ -360,9 +360,9 @@ kubectl get svc votes
 
 ### Node Resource Group
 
-Notice that AKS added a Public IP and reconfigured the Load Balancer as part of the deployment. The YAML in frontend/svc.yaml specifies "LoadBalancer" as the type of service.
+Notice that AKS added a Public IP and reconfigured the Load Balancer as part of the deployment. The YAML in votes/svc.yaml specifies "LoadBalancer" as the type of service.
 
-![screenshot](images/aks-node-frontend.png)
+![screenshot](images/aks-node-votes.png)
 
 ### Setting up Azure Application Gateway
 
@@ -423,7 +423,7 @@ az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output
 
 ### Final Resource Group
 
-Notice that AKS added a Public IP and reconfigured the Load Balancer after you deployed the frontend service. The YAML in frontend/svc.yaml specifies "LoadBalancer" as the type of service.
+Notice that AKS added a Public IP and reconfigured the Load Balancer after you deployed the votes service. The YAML in votes/svc.yaml specifies "LoadBalancer" as the type of service.
 
 ![screenshot](images/aks-node-final.png)
 
