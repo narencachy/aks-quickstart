@@ -26,66 +26,37 @@ The full walk through takes about 90 minutes.
 
 ## Prerequisites
 
-This walk through uses Azure Cloud Shell (click on the >_ icon in the top header)
-
-If this is your first time using Azure Cloud Shell, installation instructions are here <cloudshell.md>
-
-Everything you need is installed in Azure Cloud Shell. If you choose to use Mac Terminal, you will need to install the Azure CLI. <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>
-
-The first time you login, you will need to authorize your terminal to use Azure CLI by following the instructions.
-
-You will also need to install the Kubernetes CLI.
-
-```
-# Install kubectl
-az aks install-cli
-```
+* Azure subscription
+* Access to Azure Portal and Azure Cloud Shell
 
 ## Let's get started
 
-### Set environment variables
+Open the Azure Portal in a new window <https://portal.azure.com>
 
-The walk through uses these environment variables extensively. Setting the environment variables is neccesary to support copying and pasting the commands into bash.
+This walk through uses Azure Cloud Shell (click on the >_ icon in the top header)
 
-AKS is not currently available in all regions, so we'll need to pick a region where it is available. The default in setenv is CentralUS. We also need to verify that whatever size VMs we use for nodes are available in that region as well. The default in setenv is Standard_D2s_v3. You can change these by editing setenv.
+If this is your first time using Azure Cloud Shell, installation instructions are here [a relative link](cloudshell.md)
+
+### Clone this repo
 
 ```
-# Clone this repo
 git clone https://github.com/bartr/aks-quickstart
-```
 
-(optional and not recommended) edit setenv to use your values
-
-Run this command to set the environment variables
-
-```
-source setenv
-```
-
-### Choosing a region / VM size
-
-(you can ignore this and accept the defaults)
-
-List of regions where AKS is available
-
-<https://docs.microsoft.com/en-us/azure/aks/container-service-quotas>
-
-List of VM Sizes in your region
-
-```
-az vm list-sizes -l $AKSLOC -o table
+cd aks-quickstart
 ```
 
 ### Login and select your Azure subscription
-
-If you're already logged in and have the subscription default set, this is optional
 
 ```
 az login
 
 # show default subscription
 az account show -o table
+```
 
+### If you want to change to a different subscription
+
+```
 # list all subscriptions
 az account list -o table
 
@@ -93,14 +64,18 @@ az account list -o table
 az account set -s <your-subscription>
 ```
 
-### Create a resource group and AKS Cluster
+### Create a resource group, Docker build server and AKS Cluster
 
 ```
-az group create -l $AKSLOC -g $AKSRG
-
 # this takes a while
-az aks create -g $AKSRG -n $AKSNAME -c 3 -s $AKSSIZE
+./setup
+
 ```
+
+### Optional Docker walk through
+
+If you're not familiar with Docker, here's a quick walk through: [a relative link](docker.md)
+
 
 ### What this did
 If you check the Azure portal, you will see that this command created two resource groups - AKSRG and MC_AKSRG_AKSNAME_AKSLOC. The AKS resource group contains the AKS service (Controller). The other resource group contains the k8s nodes. Here is a screen shot of what is created in the nodes subscription. You will notice that there are 3 Nodes (VMs).
@@ -122,8 +97,6 @@ kubectl get nodes
 ```
 
 ### Some basic commands
-
-If you're familiar with Docker, many of these commands will look similar. If you're not familiar with Docker, there's a quick walk through here: <docker.md>
 
 kubectl is the Kubernetes CLI. setenv creates the "k" alias to make typing easier.
 

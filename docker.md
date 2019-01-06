@@ -1,33 +1,18 @@
 # Docker Walk Through
 
-If you haven't already, clone the repo
-
-```
-git clone https://github.com/bartr/aks-quickstart
-
-cd aks-quickstart/docker
-```
-
-Create an Azure VM running Docker and Go
-
-```
-# this takes 5-10 minutes
-./create
-
-# If you get a certicate error, edit ./create and remove the following line then run ./create again
---generate-ssh-keys \
-
-# if DHOST is empty, wait a few seconds and run again until not empty
-DHOST=aks@`az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv`
-echo $DHOST
+If you haven't already, clone the repo and run setup as explained in <README.md>
 
 # connect to the Docker VM you just created
-ssh $DHOST
-
-# Your prompt should look like this:
-# aks@docker:~$
 
 ```
+# to connect to the Docker build server
+export DHOST=aks@`az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv`
+ssh $DHOST
+```
+
+Your prompt should look like this:
+
+aks@docker:~$
 
 Run some docker commands
 
