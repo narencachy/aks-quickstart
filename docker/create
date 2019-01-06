@@ -1,0 +1,15 @@
+#!/bin/bash
+
+az group create --name aks --location centralus
+
+az vm create \
+--size standard_d2s_v3 \
+--nsg-rule SSH \
+--image Canonical:UbuntuServer:18.04-LTS:latest \
+-g aks \
+-n docker \
+--admin-username aks \
+--custom-data startup.sh
+
+export DHOST=aks@`az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv`
+
