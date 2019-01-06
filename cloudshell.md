@@ -19,12 +19,11 @@ You will see this:
 
 You will see this:
 
-
 ![Initial node resource group](images/cloud-shell-3.png)
 
 * Select the Region
 * Select or create the Resource Group (I use my alias - do NOT use "AKS" as we'll create/delete that later)
 * Select or create the Storage Account (I use my alias but this has to be a unique DNS name)
-* Select or create the File Share (I recommend using clouddrive as the share name)
+* Select or create the File Share (I use clouddrive as the share name)
 
 ### Done!
