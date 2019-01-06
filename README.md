@@ -24,9 +24,13 @@ The full walk through takes about 90 minutes.
 
 ## Prerequisites
 
-This walk through has been tested using Azure Cloud Shell (bash), Mac terminal and Ubuntu (bash).
+This walk through uses Azure Cloud Shell (click on the >_ icon in the top header)
 
-Everything you need is installed in Azure Cloud Shell. If you're using Mac or Ubuntu, you will need to install the Azure CLI. <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>
+If this is your first time using Azure Cloud Shell, installation instructions are here <cloudshell.md>
+
+Everything you need is installed in Azure Cloud Shell. If you choose to use Mac Terminal, you will need to install the Azure CLI. <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>
+
+The first time you login, you will need to authorize your terminal to use Azure CLI by following the instructions.
 
 You will also need to install the Kubernetes CLI.
 
@@ -47,8 +51,9 @@ AKS is not currently available in all regions, so we'll need to pick a region wh
 # Clone this repo
 git clone https://github.com/bartr/aks-quickstart
 
-# edit setenv to use your values
+# (optional and not recommended) edit setenv to use your values
 
+# run this command (you can use . instead of source)
 source setenv
 ```
 
@@ -64,15 +69,22 @@ az vm list-sizes -l $AKSLOC -o table | grep s_v3
 
 ### Login and select your Azure subscription
 
+If you're already logged in and have the subscription default set, this is optional
+
 ```
-# Optional if you're already logged in and have the subscription default set
 az login
-az account set -s $AKSSUB
+
+# show default subscription
+az account show -o table
+
+# list all subscriptions
+az account list -o table
+
+# change your default subscription if desired
+az account set -s <your-subscription>
 ```
 
 ### Create a resource group and AKS Cluster
-
-If you add AKS to an existing Resource Group, *DO NOT* delete the Resource Group in the cleanup stage!
 
 ```
 az group create -l $AKSLOC -g $AKSRG
@@ -102,7 +114,7 @@ kubectl get nodes
 
 ### Some basic commands
 
-If you're familiar with Docker, many of these commands will look similar.
+If you're familiar with Docker, many of these commands will look similar. If you're not familiar with Docker, there's a quick walk through here: <docker.md>
 
 kubectl is the Kubernetes CLI. setenv creates the "k" alias to make typing easier.
 
