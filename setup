@@ -6,8 +6,7 @@ mkdir -p ~/.ssh
 
 az group create --name $AKSRG --location $AKSLOC
 
-az aks create -g $AKSRG -n $AKSNAME -c 3 -s $AKSSIZE --no-wait
-
+# create Docker build VM
 if [ -f ~/.ssh/id_rsa ]; then
     az vm create \
     --size standard_d2s_v3 \
@@ -29,8 +28,8 @@ else
     --custom-data docker/startup.sh
 fi
 
-
-az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv
+# create AKS cluster
+az aks create -g $AKSRG -n $AKSNAME -c 3 -s $AKSSIZE --no-wait
 
 export DHOST=aks@`az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv`
-
+echo $DHOST
