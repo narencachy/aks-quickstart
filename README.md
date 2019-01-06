@@ -35,7 +35,7 @@ Open the Azure Portal in a new window <https://portal.azure.com>
 
 This walk through uses Azure Cloud Shell (click on the >_ icon in the top header)
 
-If this is your first time using Azure Cloud Shell, installation instructions are here [a relative link](cloudshell.md)
+If this is your first time using Azure Cloud Shell, installation instructions are [here](cloudshell.md)
 
 ### Clone this repo
 
@@ -74,7 +74,7 @@ az account set -s <your-subscription>
 
 ### Optional Docker walk through
 
-If you're not familiar with Docker, here's a quick walk through: [a relative link](docker.md)
+If you're not familiar with Docker, here's a quick [walk through](docker.md)
 
 
 ### What this did
