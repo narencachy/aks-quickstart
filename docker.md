@@ -58,7 +58,7 @@ docker exec -it web sh
 
 # run a couple of commands and exit
 pwd
-ll
+ls
 cat logs/app.log
 
 exit
@@ -73,9 +73,7 @@ docker rm web
 
 ### Build a container
 
-
 clone a sample Go app
-
 
 ```
 git clone https://github.com/bartr/go-web-aks
@@ -92,7 +90,6 @@ curl localhost:8080
 # bring the web app to the foreground and stop it
 fg
 # press <ctl> c to stop the app
-
 
 cd ..
 ```

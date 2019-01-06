@@ -50,21 +50,28 @@ AKS is not currently available in all regions, so we'll need to pick a region wh
 ```
 # Clone this repo
 git clone https://github.com/bartr/aks-quickstart
+```
 
-# (optional and not recommended) edit setenv to use your values
+(optional and not recommended) edit setenv to use your values
 
-# run this command (you can use . instead of source)
+Run this command to set the environment variables
+
+```
 source setenv
 ```
 
-### List of regions where AKS is available
+### Choosing a region / VM size
+
+(you can ignore this and accept the defaults)
+
+List of regions where AKS is available
 
 <https://docs.microsoft.com/en-us/azure/aks/container-service-quotas>
 
-### List of VM Sizes in your region
+List of VM Sizes in your region
 
 ```
-az vm list-sizes -l $AKSLOC -o table | grep s_v3
+az vm list-sizes -l $AKSLOC -o table
 ```
 
 ### Login and select your Azure subscription
