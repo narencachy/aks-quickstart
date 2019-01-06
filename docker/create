@@ -6,6 +6,7 @@ az vm create \
 --size standard_d2s_v3 \
 --nsg-rule SSH \
 --image Canonical:UbuntuServer:18.04-LTS:latest \
+--generate-ssh-keys \
 -g aks \
 -n docker \
 --admin-username aks \
