@@ -14,9 +14,11 @@ Create an Azure VM running Docker and Go
 # this takes 5-10 minutes
 ./create
 
+# If you get a certicate error, edit ./create and remove the following line then run ./create again
+--generate-ssh-keys \
 
-# if DHOST is empty, wait 30 seconds and run again until not empty
-export DHOST=aks@`az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv`
+# if DHOST is empty, wait a few seconds and run again until not empty
+DHOST=aks@`az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv`
 echo $DHOST
 
 # connect to the Docker VM you just created
