@@ -1,0 +1,36 @@
+#!/bin/bash
+
+. setenv
+
+mkdir -p ~/.ssh
+
+az group create --name $AKSRG --location $AKSLOC
+
+az aks create -g $AKSRG -n $AKSNAME -c 3 -s $AKSSIZE --no-wait
+
+if [ -f ~/.ssh/id_rsa ]; then
+    az vm create \
+    --size standard_d2s_v3 \
+    --nsg-rule SSH \
+    --image Canonical:UbuntuServer:18.04-LTS:latest \
+    -g aks \
+    -n docker \
+    --admin-username aks \
+    --custom-data startup.sh
+else 
+    az vm create \
+    --size standard_d2s_v3 \
+    --nsg-rule SSH \
+    --image Canonical:UbuntuServer:18.04-LTS:latest \
+    --generate-ssh-keys \
+    -g aks \
+    -n docker \
+    --admin-username aks \
+    --custom-data startup.sh
+fi
+
+
+az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv
+
+export DHOST=aks@`az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv`
+
