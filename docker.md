@@ -1,12 +1,12 @@
 # Docker Walk Through
 
-If you haven't already, clone the repo and run setup as explained in <README.md>
+If you haven't already, clone the repo and run setup as explained in the [readme](README.md)
 
 # connect to the Docker VM you just created
 
 ```
 # to connect to the Docker build server
-export DHOST=aks@`az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv`
+export DHOST=aks@`az network public-ip show -g $AKSRG -n dockerPublicIP --query [ipAddress] -o tsv`
 ssh $DHOST
 ```
 
@@ -88,8 +88,11 @@ docker build -t web .
 docker images
 
 cat dockerfile
+```
 
-# run the container
+### Run the container
+
+```
 docker run -d --name web -p 80:8080 web
 
 # verify it's running
@@ -106,9 +109,9 @@ docker rm web
 # should be nothing running
 docker ps -a
 
-# We're done!
 exit
 
 # Prompt should change
 ```
 
+### We're done!
