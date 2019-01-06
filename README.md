@@ -64,15 +64,22 @@ az vm list-sizes -l $AKSLOC -o table | grep s_v3
 
 ### Login and select your Azure subscription
 
+Optional if you're already logged in and have the subscription default set
+
 ```
-# Optional if you're already logged in and have the subscription default set
 az login
-az account set -s $AKSSUB
+
+# show default subscription
+az account show -o table
+
+# list all subscriptions
+az account list -o table
+
+# change your default subscription if desired
+az account set -s <your-subscription>
 ```
 
 ### Create a resource group and AKS Cluster
-
-If you add AKS to an existing Resource Group, *DO NOT* delete the Resource Group in the cleanup stage!
 
 ```
 az group create -l $AKSLOC -g $AKSRG
