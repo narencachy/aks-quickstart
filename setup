@@ -16,7 +16,7 @@ if [ -f ~/.ssh/id_rsa ]; then
     -g aks \
     -n docker \
     --admin-username aks \
-    --custom-data startup.sh
+    --custom-data docker/startup.sh
 else 
     az vm create \
     --size standard_d2s_v3 \
@@ -26,7 +26,7 @@ else
     -g aks \
     -n docker \
     --admin-username aks \
-    --custom-data startup.sh
+    --custom-data docker/startup.sh
 fi
 
 
