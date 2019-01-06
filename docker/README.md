@@ -25,9 +25,6 @@ ssh $DHOST
 # Your prompt should look like this:
 # aks@docker:~$
 
-
-# optional - so you can type "d" instead of "docker" in all the commands
-alias d=docker
 ```
 
 Run some docker commands
@@ -48,8 +45,8 @@ curl localhost
 docker logs web
 
 # run some commands in the container
-docker exec pwd
-docker exec ls
+docker exec web pwd
+docker exec web ls
 docker exec web cat logs/app.log
 
 # start an interactive shell in the container
@@ -109,7 +106,7 @@ docker images
 cat dockerfile
 
 # run the container
-docker run --name web -p 80:8080 web
+docker run -d --name web -p 80:8080 web
 
 # verify it's running
 docker ps
