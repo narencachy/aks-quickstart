@@ -14,7 +14,7 @@ Your prompt should look like this:
 
 aks@docker:~$
 
-Run some docker commands
+### Run some docker commands
 
 ```
 # run a web app
@@ -49,16 +49,16 @@ cat logs/app.log
 exit
 ```
 
-Stop and remove the web server
+### Stop and remove the web server
 
 ```
 docker stop web
 docker rm web
 ```
 
-### Build a container
+## Build a container
 
-clone a sample Go app
+### Clone a sample Go app
 
 ```
 git clone https://github.com/bartr/go-web-aks
@@ -79,7 +79,7 @@ fg
 cd ..
 ```
 
-## Build a docker container
+### Build a docker container
 
 ```
 docker build -t web .
@@ -101,8 +101,11 @@ docker ps
 # send a web request and look at logs
 curl localhost
 docker logs web
+```
 
-# stop and remove the web container
+### Stop and remove the web container
+
+```
 docker stop web
 docker rm web
 
@@ -110,8 +113,6 @@ docker rm web
 docker ps -a
 
 exit
-
-# Prompt should change
 ```
 
-### We're done!
+## We're done!
