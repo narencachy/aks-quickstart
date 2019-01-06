@@ -1,12 +1,8 @@
 #!/bin/bash
 
-# set this
-export AKSSUB=k8s
-
 # Change these if desired
 export AKSRG=aks
 export AKSNAME=aks
-
 export AKSLOC=centralus
 export AKSSIZE=Standard_D2s_v3
 
