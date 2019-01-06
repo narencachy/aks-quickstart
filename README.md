@@ -22,6 +22,7 @@ The full walk through takes about 90 minutes.
 * AKS: <https://docs.microsoft.com/en-us/azure/aks/>
 * Kubernetes: <https://kubernetes.io/docs/home/>
 * Microsoft Cloud Workshop: <https://github.com/Microsoft/MCW-Containers-and-DevOps>
+* What the Hack - k8s: <https://github.com/Microsoft/WhatTheHack/tree/master/001-IntroToKubernetes>
 
 ## Prerequisites
 
