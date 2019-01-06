@@ -49,7 +49,7 @@ cat logs/app.log
 exit
 ```
 
-### Stop and remove the web server
+### Stop and remove the web container
 
 ```
 docker stop web
@@ -62,24 +62,10 @@ docker rm web
 
 ```
 git clone https://github.com/bartr/go-web-aks
-
-# run the app locally
-cd go-web-aks/app
-
-# run in the background
-go run main.go &
-
-# make a web request
-curl localhost:8080
-
-# bring the web app to the foreground and stop it
-fg
-# press <ctl> c to stop the app
-
-cd ..
+cd go-web-aks
 ```
 
-### Build a docker container
+### Build the docker container
 
 ```
 docker build -t web .
