@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: nginx-go
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: nginx-go
@@ -12,9 +12,16 @@ spec:
       labels:
         app: nginx-go
     spec:
+      volumes:
+      - name: www-data
+        persistentVolumeClaim:
+          claimName: www-pvc
       containers:
       - name: nginx-go
         image: bartr/nginx-go
+        volumeMounts:
+        - name: www-data
+          mountPath: /var/www
         resources:
           requests:
             cpu: 150m
