@@ -5,6 +5,11 @@
 mkdir -p ~/.ssh
 
 az group create --name $AKSRG --location $AKSLOC
+az group create -n $ACRRG --location $AKSLOC
+
+# Create service principal
+az ad sp create-for-rbac --skip-assignment -n $ACR_SP -p $SP_PWD
+APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
 
 # create Docker build VM
 if [ -f ~/.ssh/id_rsa ]; then
@@ -29,7 +34,14 @@ else
 fi
 
 # create AKS cluster
-az aks create -g $AKSRG -n $AKSNAME -c 3 -s $AKSSIZE --no-wait
+# create AKS
+az aks create -g $AKSRG \
+-n $AKSNAME \
+-c 3 \
+-s $AKSSIZE \
+--service-principal $APP_ID \
+--client-secret $SP_PWD \
+--no-wait
 
 export DHOST=aks@`az network public-ip show -g aks -n dockerPublicIP --query [ipAddress] -o tsv`
 echo $DHOST
