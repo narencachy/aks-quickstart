@@ -429,6 +429,9 @@ az group delete -y --no-wait -g $AKSRG
 az group delete -y --no-wait -g MC_${AKSRG}_${AKSNAME}_${AKSLOC}
 az group list -o table
 
+# Delete service principal
+az ad sp delete --id $APP_ID
+
 # Only remove this file if this is the only k8s cluster in the file. Otherwise, edit the file and remove the key information
 
 rm ~/.kube/config
