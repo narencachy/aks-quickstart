@@ -421,6 +421,28 @@ Notice that AKS added a Public IP and reconfigured the Load Balancer after you d
 
 ![screenshot](images/aks-node-final.png)
 
+### Azure Container Registry
+
+```
+# create the Azure container registry
+az acr create -g $ACRRG -n $ACR_NAME --sku Basic
+
+# login to ACR
+az acr login -n $ACR_NAME
+
+# upload a container
+docker pull bartr/goweb
+docker tag bartr/goweb ${ACR_LOGIN_SERVER}/goweb
+docker push ${ACR_LOGIN_SERVER}/goweb
+
+# Assign role to service principal
+ACR_ID=$(az acr show -n $ACR_NAME -g acr --query "id" --output tsv)
+az role assignment create --assignee $APP_ID --scope $ACR_ID --role Reader
+
+# Run the container in AKS
+kubectl create gowebacr --image ${ACR_LOGIN_SERVER}/goweb
+```
+
 ### Clean up
 
 ```
