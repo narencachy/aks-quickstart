@@ -208,7 +208,7 @@ docker run -d --name redis redis
 # restart the ubu container
 docker start -ai ubu
 
-curl redis
+ping redis
 
 # oops
 # We have to attach the container to the same network
