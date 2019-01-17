@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: app-gw
-        image: bartr/go-web-aks
+        image: bartr/govote
         resources:
           requests:
             cpu: 250m
