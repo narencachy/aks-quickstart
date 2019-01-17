@@ -6,6 +6,8 @@ spec:
   type: LoadBalancer
   ports:
   - port: 80
+    protocol: TCP
+    targetPort: 8080
   selector:
     app: votes
  
