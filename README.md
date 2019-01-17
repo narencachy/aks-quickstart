@@ -365,6 +365,15 @@ exit
 fg
 # press <ctl> c
 
+# A simpler way
+kubectl get pods
+
+# replace redis-12345 with the actual value
+kubectl exec -it redis-12345 redis-cli
+incr Dogs
+incr Cats
+exit
+
 ```
 
 ### Create and deploy the votes web app
