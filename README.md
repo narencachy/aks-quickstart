@@ -86,7 +86,7 @@ If you're not familiar with Docker, here's a quick [walk through](docker.md)
 
 
 ### What this did
-If you check the Azure portal, you will see that this command created two resource groups - AKSRG and MC_AKSRG_AKSNAME_AKSLOC. The AKS resource group contains the AKS service (Controller) and the Docker build VM. The other resource group contains the k8s nodes. Here is a screen shot of what is created in the nodes subscription. You will notice that there are 3 Nodes (VMs).
+If you check the Azure portal, you will see that this command created two resource groups - aks and MC_aks_aks_centralus. The aks resource group contains the AKS service (Controller) and the Docker build VM. The MC_aks_aks_centralus resource group contains the k8s nodes. Here is a screen shot of what is created in the MC_aks_aks_centralus resource group. You will notice that there are 3 Nodes (VMs).
 
 ![Initial node resource group](images/aks-node-initial.png)
 
