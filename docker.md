@@ -1,8 +1,9 @@
 # Docker Walk Through
+### 100 level
 
 If you haven't already, clone the repo and run setup as explained in the [readme](README.md)
 
-# connect to the Docker VM you just created
+# Connect to the Docker VM you just created
 
 ```
 
@@ -20,8 +21,8 @@ aks@docker:~$
 
 ```
 
-# we don't have any :(
 docker images
+# we don't have any :(
 
 # pull an image
 docker pull ubuntu:latest
@@ -195,8 +196,6 @@ docker rm web
 # should be nothing running
 docker ps -a
 
-exit
-
 ```
 
 ### Let's run something a little more complex ...
@@ -268,7 +267,7 @@ curl localhost
 # Dogs RULE!
 ```
 
-### Size matters
+### Container size matters
 
 Notice the size difference in the diferent images - from 12 MB to 700 MB
 
