@@ -29,9 +29,9 @@ apt-get update
 
 apt-get install -y golang-go
 apt-get install -y docker-ce
-# apt-get install -y azure-cli
+apt-get install -y azure-cli
 # apt-get install -y dotnet-sdk-2.2
-# apt-get install -y kubectl
+apt-get install -y kubectl
 
 apt-get upgrade -y
 
