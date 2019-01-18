@@ -5,7 +5,7 @@ groupadd docker
 usermod -aG docker aks
 
 # install some stuff
-apt-get install -y apt-transport-https ca-certificates curl git wget nano lsb-release software-properties-common jq
+apt-get install -y apt-transport-https ca-certificates curl git wget nano lsb-release software-properties-common jq redis-tools
 
 # add Docker repo
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
