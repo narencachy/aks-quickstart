@@ -17,7 +17,7 @@ if [ -f ~/.ssh/id_rsa ]; then
     --size standard_d2s_v3 \
     --nsg-rule SSH \
     --image Canonical:UbuntuServer:18.04-LTS:latest \
-    -g aks \
+    -g $ACRRG \
     -n docker \
     --admin-username aks --admin-password=Kubernetes-k8s \
     --custom-data docker/startup.sh
@@ -26,7 +26,7 @@ else
     --size standard_d2s_v3 \
     --nsg-rule SSH \
     --image Canonical:UbuntuServer:18.04-LTS:latest \
-    -g aks \
+    -g $ACRRG \
     -n docker \
     --admin-username aks --admin-password=Kubernetes-k8s \
     --custom-data docker/startup.sh
