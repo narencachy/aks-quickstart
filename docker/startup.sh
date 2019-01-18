@@ -1,5 +1,7 @@
 #!/bin/sh
 
+echo "processing startup script ..." > /home/aks/status
+
 # add Docker group
 groupadd docker
 usermod -aG docker aks
@@ -45,3 +47,6 @@ echo " " >> /home/aks/.profile
 echo "cd ~/aks" >> /home/aks/.profile
 echo ". setenv" >> /home/aks/.profile
 echo "git pull" >> /home/aks/.profies
+
+echo "complete" > /home/aks/status
+
