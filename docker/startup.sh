@@ -27,14 +27,15 @@ echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.
 
 apt-get update
 
-apt-get install -y golang-go
 apt-get install -y docker-ce
 apt-get install -y azure-cli
-# apt-get install -y dotnet-sdk-2.2
 apt-get install -y kubectl
 
-apt-get upgrade -y
+# apt-get install -y golang-go
+# apt-get install -y dotnet-sdk-2.2
 
-apt-get dist-upgrade -y
+#apt-get upgrade -y
 
-shutdown -r now
+#apt-get dist-upgrade -y
+
+#shutdown -r now
