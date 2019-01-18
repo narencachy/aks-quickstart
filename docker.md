@@ -3,29 +3,32 @@
 
 If you haven't already, clone the repo and run setup as explained in the [readme](README.md)
 
-# Connect to the Docker VM you just created
+### Connect to your build server
 
-```
-
-# to connect to the Docker build server
-export DHOST=aks@`az network public-ip show -g $AKSRG -n dockerPublicIP --query [ipAddress] -o tsv`
-ssh $DHOST
-
-```
+Follow the steps in [readme](README.md) to connect to your build server via SSH
 
 Your prompt should look like this:
 
-aks@docker:~$
+aks@docker:~/$
+
+### Make sure post install script has completed
+
+```
+
+# should return ready
+cat status
+
+```
 
 ### Some basic docker commands
 
 ```
 
+# show local images
 docker images
-# we don't have any :(
 
 # pull an image
-docker pull ubuntu:latest
+docker pull alpine
 docker images
 
 # let's run the image interactively
@@ -39,11 +42,11 @@ cd root
 ping www.microsoft.com
 
 # oops - ping isn't installed
-# let's install ping and curl
+# let's install ping, curl and redis cli
 apt-get update
-apt-get install -y iputils-ping curl
+apt-get install -y iputils-ping curl redis-tools
 
-ping www.microsoft.com
+ping -c 3 www.microsoft.com
 curl www.microsoft.com
 
 exit
@@ -103,8 +106,7 @@ curl localhost
 docker logs web
 
 # run some commands in the container
-docker exec web pwd
-docker exec web ls
+docker exec web ls -al
 docker exec web cat logs/app.log
 
 # start an interactive shell in the container
@@ -113,8 +115,7 @@ docker exec -it web sh
 # notice your prompt changed
 
 # run a couple of commands and exit
-pwd
-ls
+ls -al
 cat logs/app.log
 
 exit
@@ -283,6 +284,7 @@ docker images
 
 ```
 
+# if you don't remove these, parts of the AKS walk through will break as the ports will be in use
 docker rm -f govote
 docker rm -f redis
 docker rm ubu
@@ -290,12 +292,3 @@ docker rm ubu
 ```
 
 ## We're done!
-
-```
-
-exit
-
-# we're back at the Azure Cloud Shell Prompt
-# let's go run some kubectl commands
-
-```
