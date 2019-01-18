@@ -5,6 +5,7 @@ groupadd docker
 usermod -aG docker aks
 
 # install some stuff
+apt-get update
 apt-get install -y apt-transport-https ca-certificates curl git wget nano lsb-release software-properties-common jq redis-tools
 
 # add Docker repo
@@ -26,10 +27,7 @@ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
 
 apt-get update
-
-apt-get install -y docker-ce
-apt-get install -y azure-cli
-apt-get install -y kubectl
+apt-get install -y docker-ce azure-cli kubectl
 
 # apt-get install -y golang-go
 # apt-get install -y dotnet-sdk-2.2
@@ -39,3 +37,8 @@ apt-get install -y kubectl
 #apt-get dist-upgrade -y
 
 #shutdown -r now
+
+git clone https://github.com/bartr/aks-quickstart /home/aks/aks
+
+echo ". ~/aks/setenv" >> /home/aks/.profile
+echo "cd ~/aks" >> /home/aks/.profile
