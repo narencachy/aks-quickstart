@@ -39,6 +39,9 @@ apt-get install -y docker-ce azure-cli kubectl
 #shutdown -r now
 
 git clone https://github.com/bartr/aks-quickstart /home/aks/aks
+chown -R aks:aks /home/aks/aks
 
-echo ". ~/aks/setenv" >> /home/aks/.profile
+echo " " >> /home/aks/.profile
 echo "cd ~/aks" >> /home/aks/.profile
+echo ". setenv" >> /home/aks/.profile
+echo "git pull" >> /home/aks/.profies
