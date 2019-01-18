@@ -71,7 +71,7 @@ az account set -s <your-subscription>
 
 ```
 
-### Create a resource group, Docker build server and AKS Cluster
+### Create a Docker build server and AKS Cluster
 
 ```
 
@@ -89,6 +89,35 @@ If you're not familiar with Docker, here's a quick [walk through](docker.md)
 If you check the Azure portal, you will see that this command created two resource groups - aks and MC_aks_aks_centralus. The aks resource group contains the AKS service (Controller) and the Docker build VM. The MC_aks_aks_centralus resource group contains the k8s nodes. Here is a screen shot of what is created in the MC_aks_aks_centralus resource group. You will notice that there are 3 Nodes (VMs).
 
 ![Initial node resource group](images/aks-node-initial.png)
+
+### ssh into the build server
+
+```
+
+# to connect to the Docker build server
+export DHOST=aks@`az network public-ip show -g $AKSRG -n dockerPublicIP --query [ipAddress] -o tsv`
+ssh $DHOST
+
+```
+
+Your prompt should look like this:
+
+aks@docker:~$
+
+### clone the repo
+
+```
+
+git clone https://github.com/bartr/aks-quickstart
+
+cd aks-quickstart
+
+# if you changed any of the default values in setenv before running setup
+#   you will need to change those values here as well
+
+source setenv
+
+```
 
 ### Get the k8s credentials and save in ~/.kube/config
 
@@ -110,7 +139,8 @@ kubectl get nodes
 
 ### Some basic commands
 
-kubectl is the Kubernetes CLI. setenv creates the "k" alias to make typing easier.
+kubectl is the Kubernetes CLI. 
+setenv creates the "k" alias to make typing easier.
 
 ```
 
@@ -123,20 +153,15 @@ kubectl create deployment goweb --image=bartr/go-web-aks
 # see what was created
 kubectl get all
 
-# get the name of the app
-kubectl get pods
+# get the name of the pod
+GW=`kubectl get pod | grep goweb` && set -- $GW && GW=$1 && echo $GW
 
-# You should see something like this
-NAME                      READY   STATUS    RESTARTS   AGE
-goweb-64b448b6b8-blfsk    1/1     Running   0          99s
-
-# set an environment variable with the name from your output
-GW=goweb-64b448b6b8-blfsk
 
 # Check the logs
 kubectl logs $GW
 
 # run shell commands
+# these commands execute inside your running container
 kubectl exec $GW -- pwd
 kubectl exec $GW -- ls -al www
 
@@ -151,8 +176,13 @@ kubectl logs $GW
 # run an interactive shell
 kubectl exec -it $GW -- sh
 
+# notice your prompt changes - you are now inside the container
+
 # run some shell commands
-# the container uses a very small version of Alpine, so few utilities exist
+pwd
+ls -al
+
+# the container uses a minimized version of Alpine, so few utilities exist
 
 exit
 
@@ -167,7 +197,7 @@ You can use port forwarding to expose the port to the local shell. This will wor
 # start port forwarding in the background
 kubectl port-forward deploy/goweb 8080:8080 &
 
-# this will also work
+# this will also work by using the pod
 kubectl port-forward $GW 8080:8080 &
 
 # run curl
@@ -191,17 +221,11 @@ kubectl logs $GW
 kubectl create deployment gw --image=bartr/go-web-aks
 
 # Create a service (ClusterIP) that exposes the web site on port 80
-kubectl expose deployment gw --port=8080 --target-port=8080 --name gw
+kubectl expose deployment gw --port=80 --target-port=8080 --name gw
 
 # test the new web site
-# start a shell on goweb
-kubectl exec -it $GW -- sh
-
-# curl the service / clusterIP
-curl gw:8080
-curl gw:8080/healthcheck
-
-exit
+exec $GW -- curl gw
+exec $GW -- curl gw/healthcheck
 
 ```
 
@@ -289,7 +313,7 @@ spec:
 
 This is a simple web app without any dependencies. Because replicas is set to 3, there will be 3 instances running. AKS will create an Azure Load Balancer and a Public IP Address. The Azure Load Balancer sends traffic to each pod. Note that Azure Load Balancer keeps the TCP connection alive, so you will connect to the same node for up to 5 minutes if you hit refresh.
 
-The source code for the web app is available here: <https://github.com/bartr/go-web-aks>  The Application Gateway walk through uses the same web app.
+The source code for the web app is available here: <https://github.com/bartr/go-web-aks>
 
 
 ```
@@ -297,13 +321,17 @@ The source code for the web app is available here: <https://github.com/bartr/go-
 kubectl apply -f webapp
 
 # Wait for service to start
-kubectl get svc,pods
+kubectl get svc webapp
 
-# Browse to public IP
+# Wait for the public IP
+
+# curl the public IP
+w=`kubectl get svc | grep webapp` && set -- $w && w=$4 && echo $w
+curl $w
 
 ```
 
-If you look in the webapp directory, you will notice that the service definition and the deployment are in separate files. Since the service creates an Azure Load Balancer, having the files separate makes it easy to modify a deployment without affecting the Azure Load Balancer.
+If you look in the webapp directory, you will notice that the service definition and the deployment are in separate files. Since the service creates an Azure Load Balancer, having the files separate makes it easy to modify a deployment without accidentally affecting the Azure Load Balancer.
 
 ```
 
@@ -314,7 +342,7 @@ kubectl get pods
 # Redeploy the web app
 kubectl apply -f webapp
 
-# Notice that the service (public IP) doesn't change but the pods (deployment) does
+# Notice that the service (public IP) doesn't change but the pods (deployment) do
 
 kubectl get svc,pods
 
@@ -334,7 +362,7 @@ Notice that AKS added a Public IP and Load Balancer during deployment. The YAML 
 kubectl apply -f redis
 
 # Wait for the app to start
-kubectl get deploy,pods
+kubectl get pods
 
 ```
 
@@ -366,10 +394,10 @@ fg
 # press <ctl> c
 
 # A simpler way
-kubectl get pods
+redis=`k get pods | grep redis` && set -- $redis && redis=$1 && echo $redis
 
-# replace redis-12345 with the actual value
-kubectl exec -it redis-12345 redis-cli
+kubectl exec -it $redis -- redis-cli
+
 incr Dogs
 incr Cats
 exit
@@ -378,16 +406,20 @@ exit
 
 ### Create and deploy the votes web app
 
-This is a Java web app that uses the Redis server for persistance.
+This is a web app that uses the Redis server for persistance.
 
 ```
 
 kubectl apply -f votes
 
-# Get the public IP
+# Wait for the public IP
 kubectl get svc votes
 
-# browse to public IP to test app
+# get the public IP
+v=`kubectl get svc | grep votes` && set -- $v && v=$4 && echo $v
+
+# curl the public IP
+curl $v
 
 ```
 
@@ -396,6 +428,49 @@ kubectl get svc votes
 Notice that AKS added a Public IP and reconfigured the Load Balancer as part of the deployment. The YAML in votes/svc.yaml specifies "LoadBalancer" as the type of service.
 
 ![screenshot](images/aks-node-votes.png)
+
+### Azure Container Registry
+
+```
+# ACR_NAME has to be a unique DNS address
+# for example:
+ACR_NAME=youralias1234
+
+# create the Azure container registry
+az acr create -g $ACRRG -n $ACR_NAME --sku Basic
+
+# If ACR_NAME is not unique, you'll get an error - change ACR_NAME and try again
+
+# login to ACR
+az acr login -n $ACR_NAME
+
+# Assign role to service principal
+ACR_ID=$(az acr show -n $ACR_NAME -g acr --query "id" --output tsv)
+APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
+az role assignment create --assignee $APP_ID --scope $ACR_ID --role Reader
+
+# login to Docker
+# you will need an account on dockerhub.com
+docker login
+
+# pull an image
+docker pull bartr/go-web-aks
+
+# tag the image with the ACR repo prefix
+docker tag bartr/go-web-aks ${ACR_NAME}.azurecr.io/go-web-aks
+
+# verify the images
+docker images
+
+# push the image to ACR
+docker push ${ACR_NAME}.azurecr.io/go-web-aks
+
+# Run the container in AKS
+kubectl create deployment gowebacr --image ${ACR_NAME}.azurecr.io/go-web-aks
+
+kubectl get pods
+
+```
 
 ### Setting up Azure Application Gateway
 
@@ -406,18 +481,8 @@ These steps will setup an Azure Application Gateway with WAF support that points
 # create the app
 kubectl apply -f app-gw
 
-# wait for service / pod to start
+# wait for service / pods to start
 kubectl get svc,pods
-
-# test the web app
-# setup port forwarding for the web app
-kubectl port-forward svc/app-gw 8080:8080 &
-
-curl localhost:8080
-
-# end port forwarding
-fg
-# press <ctl> c
 
 # Create the app gateway subnet
 # This has to be an empty subnet
@@ -434,9 +499,6 @@ echo $MCVNET
 
 # change backendIpAddress to:
 kubectl get svc app-gw -o json | jq .status.loadBalancer.ingress[0].ip
-
-# change the certificate data and password if you use a different cert
-cat cert.pfx | base64 -w 0
 
 # Deploy app-gw.json
 # This takes 15-30 minutes
@@ -461,44 +523,21 @@ Notice that AKS added a Public IP and reconfigured the Load Balancer after you d
 
 ![screenshot](images/aks-node-final.png)
 
-### Azure Container Registry
-
-```
-
-# create the Azure container registry
-az acr create -g $ACRRG -n $ACR_NAME --sku Basic
-
-# login to ACR
-az acr login -n $ACR_NAME
-
-# upload a container
-docker pull bartr/goweb
-docker tag bartr/goweb ${ACR_LOGIN_SERVER}/goweb
-docker push ${ACR_LOGIN_SERVER}/goweb
-
-# Assign role to service principal
-ACR_ID=$(az acr show -n $ACR_NAME -g acr --query "id" --output tsv)
-az role assignment create --assignee $APP_ID --scope $ACR_ID --role Reader
-
-# Run the container in AKS
-kubectl create gowebacr --image ${ACR_LOGIN_SERVER}/goweb
-
-```
-
 ### Clean up
 
 ```
+# exit to Azure Cloud Shell
+exit
 
 # Delete resource groups
 az group delete -y --no-wait -g $AKSRG
+az group delete -y --no-wait -g $ACRRG
 az group delete -y --no-wait -g MC_${AKSRG}_${AKSNAME}_${AKSLOC}
-az group list -o table
 
 # Delete service principal
 az ad sp delete --id $APP_ID
 
-# Only remove this file if this is the only k8s cluster in the file. Otherwise, edit the file and remove the key information
-
-rm ~/.kube/config
+# resource groups should show "deleting"
+az group list -o table
 
 ```
