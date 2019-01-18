@@ -13,24 +13,24 @@ APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
 
 # create Docker build VM
 if [ -f ~/.ssh/id_rsa ]; then
-    az vm create --no-wait \
+    az vm create \
     --size standard_d2s_v3 \
     --nsg-rule SSH \
     --image Canonical:UbuntuServer:18.04-LTS:latest \
     -g aks \
     -n docker \
-    --admin-username aks \
+    --admin-username aks --admin-password=Kubernetes-k8s \
     --custom-data docker/startup.sh
 else 
-    az vm create --no-wait \
+    az vm create  \
     --size standard_d2s_v3 \
     --nsg-rule SSH \
     --image Canonical:UbuntuServer:18.04-LTS:latest \
-    --generate-ssh-keys \
     -g aks \
     -n docker \
-    --admin-username aks \
+    --admin-username aks --admin-password=Kubernetes-k8s \
     --custom-data docker/startup.sh
+#    --generate-ssh-keys \
 fi
 
 # create AKS cluster
@@ -41,3 +41,6 @@ az aks create -g $AKSRG \
 --service-principal $APP_ID \
 --client-secret $SP_PWD \
 --no-wait
+
+export DHOST=aks@`az network public-ip show -g $AKSRG -n dockerPublicIP --query [ipAddress] -o tsv`
+echo $DHOST
