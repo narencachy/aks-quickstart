@@ -14,7 +14,6 @@ export AKSSIZE=Standard_D2s_v3
 
 # Don't change this
 export MCRG=MC_${AKSRG}_${AKSNAME}_${AKSLOC}
-export ACR_LOGIN_SERVER=${ACR_NAME}.azurecr.io
 
 # Read the SP password if it exists
 if [ -f ~/.ssh/sp_pwd ]; then
