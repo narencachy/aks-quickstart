@@ -80,11 +80,6 @@ az account set -s <your-subscription>
 
 ```
 
-### Optional Docker walk through
-
-If you're not familiar with Docker, here's a quick [walk through](docker.md)
-
-
 ### What this did
 If you check the Azure portal, you will see that this command created two resource groups - aks and MC_aks_aks_centralus. The aks resource group contains the AKS service (Controller) and the Docker build VM. The MC_aks_aks_centralus resource group contains the k8s nodes. Here is a screen shot of what is created in the MC_aks_aks_centralus resource group. You will notice that there are 3 Nodes (VMs).
 
@@ -92,30 +87,60 @@ If you check the Azure portal, you will see that this command created two resour
 
 ### ssh into the build server
 
-```
-
-# to connect to the Docker build server
-export DHOST=aks@`az network public-ip show -g $AKSRG -n dockerPublicIP --query [ipAddress] -o tsv`
-ssh $DHOST
+Get the address of the build server
 
 ```
+
+echo aks@`az network public-ip show -g $AKSRG -n dockerPublicIP --query [ipAddress] -o tsv`
+
+```
+
+Open a command prompt or terminal window and enter the following command substituting the address of your build server. The rest of the walkthrough will be done from this terminal window.
+
+ssh aks@xxx.xxx.xxx.xxx
+
+When prompted for a password enter Kubernetes-k8s
+
+(note that this is NOT a secure VM and you should always use private keys instead of passwords)
 
 Your prompt should look like this:
 
 aks@docker:~$
 
-### clone the repo
+### Make sure post install script has completed
 
 ```
 
-git clone https://github.com/bartr/aks-quickstart
+# should return ready
+cat status
 
-cd aks-quickstart
+```
 
-# if you changed any of the default values in setenv before running setup
-#   you will need to change those values here as well
+### Docker walk through
 
-source setenv
+If you're not familiar with Docker, here's a quick [walk through](docker.md)
+
+
+### Login and select your Azure subscription
+
+```
+
+az login
+
+# show default subscription
+az account show -o table
+
+```
+
+### If you want to change to a different subscription
+
+```
+
+# list all subscriptions
+az account list -o table
+
+# change your default subscription if desired
+az account set -s <your-subscription>
 
 ```
 
@@ -124,8 +149,6 @@ source setenv
 ```
 
 az aks get-credentials -g $AKSRG -n $AKSNAME
-
-# Note: if you run this walk through repeatedly, you will need to edit / delete ~/.kube/control before running this command
 
 ```
 
@@ -449,24 +472,12 @@ ACR_ID=$(az acr show -n $ACR_NAME -g acr --query "id" --output tsv)
 APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
 az role assignment create --assignee $APP_ID --scope $ACR_ID --role Reader
 
-# login to Docker
-# you will need an account on dockerhub.com
-docker login
-
-# pull an image
-docker pull bartr/go-web-aks
-
-# tag the image with the ACR repo prefix
-docker tag bartr/go-web-aks ${ACR_NAME}.azurecr.io/go-web-aks
-
-# verify the images
-docker images
-
-# push the image to ACR
-docker push ${ACR_NAME}.azurecr.io/go-web-aks
+# build and push a docker image
+cd ~/go-web-aks
+az acr build --registry $ACR_NAME  --image gowebacr --file dockerfile .
 
 # Run the container in AKS
-kubectl create deployment gowebacr --image ${ACR_NAME}.azurecr.io/go-web-aks
+kubectl create deployment gowebacr --image ${ACR_NAME}.azurecr.io/gowebacr
 
 kubectl get pods
 
