@@ -44,9 +44,8 @@ git clone https://github.com/bartr/aks-quickstart /home/aks/aks
 chown -R aks:aks /home/aks/aks
 
 echo " " >> /home/aks/.profile
-echo "cd ~/aks" >> /home/aks/.profile
-echo ". setenv" >> /home/aks/.profile
-echo "git pull" >> /home/aks/.profies
+echo ". ~/aks/setenv" >> /home/aks/.profile
+echo "git -C ~/aks pull" >> /home/aks/.profies
 
 echo "complete" > /home/aks/status
 
