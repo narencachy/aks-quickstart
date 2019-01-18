@@ -48,20 +48,12 @@ cd aks-quickstart
 
 ```
 
-### Login and select your Azure subscription
+### If you have more than one subscriptions - select the one you want to use
 
 ```
-
-az login
 
 # show default subscription
 az account show -o table
-
-```
-
-### If you want to change to a different subscription
-
-```
 
 # list all subscriptions
 az account list -o table
@@ -114,6 +106,9 @@ aks@docker:~$
 # should return ready
 cat status
 
+# if not complete, wait until it is and then run this command
+source .profile
+
 ```
 
 ### Docker walk through
@@ -125,16 +120,20 @@ If you're not familiar with Docker, here's a quick [walk through](docker.md)
 
 ```
 
+# Follow the prompts to register the client
 az login
-
-# show default subscription
-az account show -o table
 
 ```
 
 ### If you want to change to a different subscription
 
 ```
+
+# show default subscription
+az account show -o table
+
+# show default subscription
+az account show -o table
 
 # list all subscriptions
 az account list -o table
@@ -150,6 +149,8 @@ az account set -s <your-subscription>
 
 az aks get-credentials -g $AKSRG -n $AKSNAME
 
+cat ~/.kube/config
+
 ```
 
 ### Wait for the nodes to be ready
@@ -163,7 +164,8 @@ kubectl get nodes
 ### Some basic commands
 
 kubectl is the Kubernetes CLI. 
-setenv creates the "k" alias to make typing easier.
+
+setenv (which runs in .profile) creates a "k" alias to make typing easier, so you can type k instead of kubectl
 
 ```
 
@@ -185,11 +187,10 @@ kubectl logs $GW
 
 # run shell commands
 # these commands execute inside your running container
-kubectl exec $GW -- pwd
+
 kubectl exec $GW -- ls -al www
 
 # check the local website
-# curl has to be installed in the container
 kubectl exec $GW -- curl localhost:8080
 kubectl exec $GW -- curl localhost:8080/healthcheck
 
@@ -202,8 +203,8 @@ kubectl exec -it $GW -- sh
 # notice your prompt changes - you are now inside the container
 
 # run some shell commands
-pwd
 ls -al
+cat logs/app.log
 
 # the container uses a minimized version of Alpine, so few utilities exist
 
@@ -213,14 +214,15 @@ exit
 
 ### Port forwarding
 
-You can use port forwarding to expose the port to the local shell. This will work on a deployment, service, pod, etc.
+You can use port forwarding to expose the port to the local host. This will work on a deployment, service, pod, etc.
 
 ```
 
 # start port forwarding in the background
+# you may have to press enter twice to get your prompt back
 kubectl port-forward deploy/goweb 8080:8080 &
 
-# this will also work by using the pod
+# this will also work by using the pod - but not at the same time!
 kubectl port-forward $GW 8080:8080 &
 
 # run curl
@@ -456,8 +458,11 @@ Notice that AKS added a Public IP and reconfigured the Load Balancer as part of 
 
 ```
 # ACR_NAME has to be a unique DNS address
-# for example:
+# use ping to check uniqueness
+# if you don't get "Name or service not known", change ACR_NAME until you do
+
 ACR_NAME=youralias1234
+ping ${ACR_NAME}.azurecr.io
 
 # create the Azure container registry
 az acr create -g $ACRRG -n $ACR_NAME --sku Basic
@@ -468,13 +473,26 @@ az acr create -g $ACRRG -n $ACR_NAME --sku Basic
 az acr login -n $ACR_NAME
 
 # Assign role to service principal
+# this lets AKS pull images securely from ACR
 ACR_ID=$(az acr show -n $ACR_NAME -g acr --query "id" --output tsv)
 APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
 az role assignment create --assignee $APP_ID --scope $ACR_ID --role Reader
 
 # build and push a docker image
 cd ~/go-web-aks
-az acr build --registry $ACR_NAME  --image gowebacr --file dockerfile .
+
+# local build
+docker build -t ${ACR_NAME}.azurecr.io/gowebacr .
+docker push ${ACR_NAME}.azurecr.io/gowebacr
+
+# List images in ACR
+az acr repository list -n $ACR_NAME
+
+# ACR build (and push)
+az acr build --registry $ACR_NAME  --image gowebacr2 --file dockerfile .
+
+# List images in ACR
+az acr repository list -n $ACR_NAME
 
 # Run the container in AKS
 kubectl create deployment gowebacr --image ${ACR_NAME}.azurecr.io/gowebacr
@@ -497,7 +515,7 @@ kubectl get svc,pods
 
 # Create the app gateway subnet
 # This has to be an empty subnet
-MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv`
+MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv` && echo $MCVNET
 az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet-name $MCVNET --address-prefix 10.0.0.0/24
 
 # change to the setup directory
@@ -519,12 +537,11 @@ az group deployment create --name app-gw-deployment -g $MCRG --template-file app
 az network application-gateway show -g $MCRG --name app-gw -o table
 
 # get the app gateway public IP address
-az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output tsv
+echo "http://`az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output tsv`"
 
-# Browse to http://app-gw-public-ip/
+# Browse to the url
 # you should be automatically redirected to https
-# note that cert.pfx is a self-signed cert, so you will get a warning from your browser
-# the cert is setup for 4.co and www.4.co, so you can add an entry to your hosts file with the IP (optional)
+# note that we use a self-signed cert, so you will get a warning from your browser
 
 ```
 
