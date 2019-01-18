@@ -29,7 +29,7 @@ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
 
 apt-get update
-apt-get install -y docker-ce azure-cli kubectl
+apt-get install -y azure-cli docker-ce kubectl
 
 # apt-get install -y golang-go
 # apt-get install -y dotnet-sdk-2.2
@@ -45,7 +45,13 @@ chown -R aks:aks /home/aks/aks
 
 echo " " >> /home/aks/.profile
 echo ". ~/aks/setenv" >> /home/aks/.profile
-echo "git -C ~/aks pull" >> /home/aks/.profies
+echo "git -C ~/aks pull" >> /home/aks/.profile
 
-echo "complete" > /home/aks/status
+# pull the docker images
+docker pull bartr/go-web-aks
+docker pull bartr/govote
+docker pull redis
+docker pull ubuntu
 
+
+echo "ready" > /home/aks/status
