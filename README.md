@@ -416,7 +416,7 @@ Beta Test Note: if the AAD approach worked, skip this step
 ```
 
 # Read access to my ACR
-kubectl apply -f .bartr2secret.yaml
+kubectl apply -f bartr2
 
 ```
 
@@ -435,7 +435,7 @@ kubectl get svc
 kubectl get pods 
 
 # this creates the bartr2 secret
-cat .bartr2secret.yaml
+cat bartr2/secret.yaml
 
 # this specifies the bartr2 secret in the imagePullSecrets section
 more acr-app/deploy.yaml
