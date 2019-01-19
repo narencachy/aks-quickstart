@@ -31,8 +31,8 @@ docker images
 docker pull alpine
 docker images
 
-# let's run the image interactively
-docker run -it --name ubu ubuntu
+# let's run the image interactively as a "jump box"
+docker run -it --name jbox ubuntu
 
 # notice your prompt changed to something like this: root@257fde9a1ad2:/#
 # we are now "in" the docker container
@@ -58,29 +58,29 @@ exit
 ```
 
 # save our changes to a new image
-docker commit ubu ubu
+docker commit jbox jumpbox
 docker images
 
 # let's run our new image
-docker run -it --name ubu ubu
+docker run -it --name jbox jumpbox
 
 # oops
 docker ps -a
 
 # we have to remove the instance first
-docker rm ubu
-docker run -it --name ubu ubu
+docker rm jbox
+docker run -it --name jbox jumpbox
 
 # your prompt changes again
 # we're in the root directory (/) and we want to start in the home directory (~)
 exit
 
 # tell docker where to start
-docker commit -c "WORKDIR /root" ubu ubu
+docker commit -c "WORKDIR /root" jbox jumpbox
 
 # remove the instance and run again
-docker rm ubu
-docker run -it --name ubu ubu
+docker rm jbox
+docker run -it --name jbox jumpbox
 
 # there's a MUCH better way! We'll get there soon.
 
@@ -205,8 +205,8 @@ docker ps -a
 # run a Redis container
 docker run -d --name redis redis
 
-# restart the ubu container
-docker start -ai ubu
+# restart the jbox container
+docker start -ai jbox
 
 ping redis
 
@@ -219,10 +219,10 @@ docker network create vote
 
 # add the containers to the network
 docker network  connect vote redis
-docker network  connect vote ubu
+docker network  connect vote jbox
 
 # let's try again
-docker start -ai ubu
+docker start -ai jbox
 
 ping redis
 
@@ -233,7 +233,7 @@ exit
 # notice we attach it to the network
 docker run -d --net vote --name govote bartr/govote
 
-docker start -ai ubu
+docker start -ai jbox
 
 curl govote:8080
 
@@ -287,7 +287,7 @@ docker images
 # if you don't remove these, parts of the AKS walk through will break as the ports will be in use
 docker rm -f govote
 docker rm -f redis
-docker rm ubu
+docker rm jbox
 
 ```
 
