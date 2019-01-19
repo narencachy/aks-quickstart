@@ -1,6 +1,8 @@
 # AKS Walk Through
 #### 100 level
 
+Beta Test Note: The screen shots need to be updated, so they won't be exact, but they're close
+
 ## Scenario
 In this walk through of AKS basics, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on <https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough> but additional details and scenarios are covered. Note that this is a high level overview, so a lot of topics are not covered and those that are covered are high level. This is designed to be the first few steps on the AKS journey. 
 
@@ -163,59 +165,6 @@ kubectl get nodes
 
 ```
 
-### Azure Container Registry
-
-```
-# ACR_NAME has to be a unique DNS address
-# use ping to check uniqueness
-# if you don't get "Name or service not known", change ACR_NAME until you do
-
-ACR_NAME=youralias1234
-ping ${ACR_NAME}.azurecr.io
-
-# create the Azure container registry
-az acr create -g $ACRRG -n $ACR_NAME --sku Basic
-
-# If ACR_NAME is not unique, you'll get an error - change ACR_NAME and try again
-
-# login to ACR
-az acr login -n $ACR_NAME
-
-# Assign role to service principal
-# this lets AKS pull images securely from ACR
-ACR_ID=$(az acr show -n $ACR_NAME -g acr --query "id" --output tsv)
-APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
-az role assignment create --assignee $APP_ID --scope $ACR_ID --role Reader
-
-# build and push a docker image
-cd ~/go-web-aks
-
-# local build
-docker build -t ${ACR_NAME}.azurecr.io/gowebacr .
-docker push ${ACR_NAME}.azurecr.io/gowebacr
-
-# List images in ACR
-az acr repository list -n $ACR_NAME
-
-# ACR build (and push)
-az acr build --registry $ACR_NAME  --image gowebacr2 --file dockerfile .
-
-# List images in ACR
-az acr repository list -n $ACR_NAME
-
-# Run the container in AKS
-kubectl create deployment gowebacr --image ${ACR_NAME}.azurecr.io/gowebacr
-
-kubectl get pods
-
-kubectl describe pods gowebacr
-
-kubectl get deploy gowebacr -o yaml
-
-kubectl delete deploy gowebacr
-
-```
-
 ### Some basic commands
 
 kubectl is the Kubernetes CLI. 
@@ -228,7 +177,7 @@ setenv (which runs in .profile) creates a "k" alias to make typing easier, so yo
 kubectl get all
 
 # Run an app (technically, create a deployment)
-kubectl create deployment goweb --image=${ACR_NAME}.azurecr.io/gowebacr
+kubectl create deployment goweb --image=${ACR_NAME}.azurecr.io/acrgoweb
 
 # see what was created
 kubectl get all
@@ -297,7 +246,7 @@ kubectl logs $GW
 ```
 
 # Create a second deployment
-kubectl create deployment gw --image=${ACR_NAME}.azurecr.io/gowebacr
+kubectl create deployment gw --image=${ACR_NAME}.azurecr.io/acrgoweb
 
 # Create a service (ClusterIP) that exposes the web site on port 80
 kubectl expose deployment gw --port=80 --target-port=8080 --name gw
@@ -329,7 +278,7 @@ k8s has the ability to generate starter yaml files for you.
 ```
 
 # generate a simple yaml file
-kubectl create deployment goweb --image=${ACR_NAME}.azurecr.io/gowebacr --dry-run -o yaml
+kubectl create deployment goweb --image=${ACR_NAME}.azurecr.io/acrgoweb --dry-run -o yaml
 
 ```
 
@@ -353,8 +302,8 @@ spec:
         app: goweb
     spec:
       containers:
-      - image: ACR_NAME.azurecr.io/gowebacr
-        name: gowebacr
+      - image: ACR_NAME.azurecr.io/acrgoweb
+        name: acrgoweb
 
 ```
 
@@ -433,6 +382,68 @@ kubectl get svc,pods
 Notice that AKS added a Public IP and Load Balancer during deployment. The YAML in webapp/svc.yaml specifies "LoadBalancer" as the type of service which AKS maps to an Azure Load Balancer.
 
 ![screenshot](images/aks-node-webapp.png)
+
+
+## Azure Container Registry
+
+### Using someone else's ACR (same AAD directory)
+
+Beta Test Note: this probably won't work because you probably don't have the right permissions ...
+
+It does work with the same AAD ID across subscriptions
+
+```
+
+# Your AKS Service Principal
+APP_ID=$(az aks show --resource-group $AKSRG --name $AKSNAME --query "servicePrincipalProfile.clientId" --output tsv)
+
+# ACR you want to connect to
+ACR_B2="/subscriptions/c84f8d84-79a6-433b-9770-e1520b75c222/resourceGroups/acr/providers/Microsoft.ContainerRegistry/registries/bartr2"
+
+# drum roll ...
+
+# Add ACR Reader role to AKS
+az role assignment create --assignee $APP_ID --role Reader --scope $ACR_B2
+
+```
+
+### Using someone else's ACR (via a secret file)
+
+Note that secrets should be stored in Key Vault, not a public git repo ...
+
+Beta Test Note: if the AAD approach worked, skip this step
+
+```
+
+# Read access to my ACR
+kubectl apply -f .bartr2secret.yaml
+
+```
+
+### Running a container from the bartr2.azurecr.io repo
+
+Now that we have Reader access, we can run an image
+
+```
+
+kubectl apply -f acr-app
+
+kubectl get secret
+
+kubectl get svc
+
+kubectl get pods 
+
+# this creates the bartr2 secret
+cat .bartr2secret.yaml
+
+# this specifies the bartr2 secret in the imagePullSecrets section
+more acr-app/deploy.yaml
+
+# delete the deployment
+kubectl delete -f acr-app
+
+```
 
 ### Create and deploy a Redis server
 
@@ -557,6 +568,92 @@ echo "http://`az network public-ip show -g $MCRG --name app-gw-ip --query [ipAdd
 Notice that AKS added a Public IP and reconfigured the Load Balancer after you deployed the votes service. The YAML in votes/svc.yaml specifies "LoadBalancer" as the type of service.
 
 ![screenshot](images/aks-node-final.png)
+
+
+### Creating an Azure Container Registry
+
+Creating and using your own Azure Container Registry
+
+```
+# ACR_NAME has to be a unique DNS address
+# use ping to check uniqueness
+# if you don't get "Name or service not known", change ACR_NAME until you do
+
+ACR_NAME=yourdesiredname
+ping ${ACR_NAME}.azurecr.io
+
+# create the Azure container registry
+az acr create -g $ACRRG -n $ACR_NAME --sku Basic
+
+# If ACR_NAME is not unique, you'll get an error - change ACR_NAME and try again
+
+# login to ACR
+az acr login -n $ACR_NAME
+
+# Assign role to service principal
+# this lets AKS pull images securely from ACR
+ACR_ID=$(az acr show -n $ACR_NAME -g acr --query "id" --output tsv)
+APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
+az role assignment create --assignee $APP_ID --scope $ACR_ID --role Reader
+
+# clone the repo if you didn't clone in the Docker walk through
+cd ~
+git clone https://github.com/bartr/go-web-aks
+
+# build and push a docker image
+cd ~/go-web-aks
+
+# local build
+docker build -t ${ACR_NAME}.azurecr.io/acrgoweb .
+docker push ${ACR_NAME}.azurecr.io/acrgoweb
+
+# List images in ACR
+az acr repository list -n $ACR_NAME
+
+# ACR build (and push)
+az acr build --registry $ACR_NAME  --image acrgoweb2 --file dockerfile .
+
+# List images in ACR
+az acr repository list -n $ACR_NAME
+
+# Delete the acrgoweb2 image
+az acr repository delete -n $ACR_NAME  --image acrgoweb2
+az acr repository list -n $ACR_NAME
+
+# Run the container in AKS
+kubectl create deployment myacrgoweb --image ${ACR_NAME}.azurecr.io/acrgoweb
+
+kubectl get pods
+
+kubectl describe pods myacrgoweb
+
+kubectl get deploy myacrgoweb -o yaml
+
+# delete the deployment
+kubectl delete deploy myacrgoweb
+
+```
+
+### Sharing your ACR (different AAD directory)
+
+APP_ID and SP_PWD should be in Key Vault ...
+
+```
+
+kubectl create secret docker-registry $ACR_NAME \
+--dry-run -o yaml \
+--docker-server=${ACR_NAME}.azurecr.io \
+--docker-username=$APP_ID \
+--docker-password=$SP_PWD \
+--docker-email=someone@outlook.com > my_secret.yaml
+
+cat my_secret.yaml
+
+# Decoding dockerconfig.json
+# paste the base64 encoded value between ""
+echo "" | base64 --decode
+
+```
 
 ### Clean up
 
