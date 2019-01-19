@@ -386,7 +386,7 @@ Notice that AKS added a Public IP and Load Balancer during deployment. The YAML 
 
 ## Azure Container Registry
 
-### Using someone else's ACR (same AAD directory)
+### Using someone else's ACR (same AAD)
 
 Beta Test Note: this probably won't work because you probably don't have the right permissions ...
 
