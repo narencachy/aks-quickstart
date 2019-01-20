@@ -2,16 +2,10 @@
 
 mkdir -p ~/.ssh
 
-. ~/setenv
+. setenv
 
 az group create --name $AKSRG --location $AKSLOC
 az group create -n $ACRRG --location $AKSLOC
-
-# Create service principal
-
-export AKS_PWD=$(az ad sp create-for-rbac --skip-assignment -n $AKS_SP --query password --output tsv)
-echo $AKS_PWD > ~/.ssh/aks_pwd
-export AKS_APP_ID=$(az ad sp show --id http://$AKS_SP --query appId --output tsv)
 
 # create Docker build VM
 if [ -f ~/.ssh/id_rsa ]; then
@@ -36,19 +30,3 @@ else
 fi
 
 export DHOST=aks@`az network public-ip show -g $ACRRG -n dockerPublicIP --query [ipAddress] -o tsv`
-echo " "
-echo $DHOST
-echo " "
-echo " "
-echo "Creating AKS Cluster"
-
-# create AKS cluster
-az aks create -g $AKSRG \
--n $AKSNAME \
--c 3 \
--s $AKSSIZE \
---service-principal $AKS_APP_ID \
---client-secret $AKS_PWD
-
-echo " "
-echo $DHOST
