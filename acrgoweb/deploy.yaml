@@ -13,7 +13,7 @@ spec:
         app: acrgoweb
     spec:
       imagePullSecrets:
-      - name: bartrlab-Reader
+      - name: bartrlab-reader
       containers:
       - name: acrgoweb
         image: bartrlab.azurecr.io/acrgoweb
