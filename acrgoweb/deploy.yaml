@@ -13,10 +13,10 @@ spec:
         app: acrgoweb
     spec:
       imagePullSecrets:
-      - name: ACR_bartr2_Reader
+      - name: bartrlab-Reader
       containers:
       - name: acrgoweb
-        image: bartr2.azurecr.io/acrgoweb
+        image: bartrlab.azurecr.io/acrgoweb
         resources:
           requests:
             cpu: 250m
