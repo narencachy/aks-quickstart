@@ -177,7 +177,7 @@ setenv (which runs in .profile) creates a "k" alias to make typing easier, so yo
 kubectl get all
 
 # Run an app (technically, create a deployment)
-kubectl create deployment goweb --image=${ACR_NAME}.azurecr.io/acrgoweb
+kubectl create deployment goweb --image=bartr/go-web-aks
 
 # see what was created
 kubectl get all
@@ -246,7 +246,7 @@ kubectl logs $GW
 ```
 
 # Create a second deployment
-kubectl create deployment gw --image=${ACR_NAME}.azurecr.io/acrgoweb
+kubectl create deployment gw --image=bartr/go-web-aks
 
 # Create a service (ClusterIP) that exposes the web site on port 80
 kubectl expose deployment gw --port=80 --target-port=8080 --name gw
@@ -278,7 +278,7 @@ k8s has the ability to generate starter yaml files for you.
 ```
 
 # generate a simple yaml file
-kubectl create deployment goweb --image=${ACR_NAME}.azurecr.io/acrgoweb --dry-run -o yaml
+kubectl create deployment goweb --image=bartr/go-web-aks --dry-run -o yaml
 
 ```
 
@@ -302,8 +302,8 @@ spec:
         app: goweb
     spec:
       containers:
-      - image: ACR_NAME.azurecr.io/acrgoweb
-        name: acrgoweb
+      - image: bartr/go-web-aks
+        name: goweb
 
 ```
 
@@ -386,47 +386,11 @@ Notice that AKS added a Public IP and Load Balancer during deployment. The YAML 
 
 ## Azure Container Registry
 
-### Using someone else's ACR (same AAD)
-
-Beta Test Note: this probably won't work because you probably don't have the right permissions ...
-
-It does work with the same AAD ID across subscriptions
-
-```
-
-# Your AKS Service Principal
-APP_ID=$(az aks show --resource-group $AKSRG --name $AKSNAME --query "servicePrincipalProfile.clientId" --output tsv)
-
-# ACR you want to connect to
-ACR_B2="/subscriptions/c84f8d84-79a6-433b-9770-e1520b75c222/resourceGroups/acr/providers/Microsoft.ContainerRegistry/registries/bartr2"
-
-# drum roll ...
-
-# Add ACR Reader role to AKS
-az role assignment create --assignee $APP_ID --role Reader --scope $ACR_B2
-
-```
-
-### Using someone else's ACR (via a secret file)
-
-Note that secrets should be stored in Key Vault, not a public git repo ...
-
-Beta Test Note: if the AAD approach worked, skip this step
-
-```
-
-# Read access to my ACR
-kubectl apply -f bartr2
-
-```
-
 ### Running a container from the bartr2.azurecr.io repo
 
-Now that we have Reader access, we can run an image
-
 ```
 
-kubectl apply -f acr-app
+kubectl apply -f acrgoweb
 
 kubectl get secret
 
@@ -435,13 +399,13 @@ kubectl get svc
 kubectl get pods 
 
 # this creates the bartr2 secret
-cat bartr2/secret.yaml
+cat acrgoweb/secret.yaml
 
 # this specifies the bartr2 secret in the imagePullSecrets section
-more acr-app/deploy.yaml
+more acrgoweb/deploy.yaml
 
 # delete the deployment
-kubectl delete -f acr-app
+kubectl delete -f acrgoweb
 
 ```
 
@@ -592,7 +556,7 @@ az acr login -n $ACR_NAME
 
 # Assign role to service principal
 # this lets AKS pull images securely from ACR
-ACR_ID=$(az acr show -n $ACR_NAME -g acr --query "id" --output tsv)
+ACR_ID=$(az acr show -n $ACR_NAME -g $ACRRG --query "id" --output tsv)
 APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
 az role assignment create --assignee $APP_ID --scope $ACR_ID --role Reader
 
@@ -634,7 +598,7 @@ kubectl delete deploy myacrgoweb
 
 ```
 
-### Sharing your ACR (different AAD directory)
+### Sharing your ACR
 
 APP_ID and SP_PWD should be in Key Vault ...
 
