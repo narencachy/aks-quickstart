@@ -9,9 +9,9 @@ az group create -n $ACRRG --location $AKSLOC
 
 # Create service principal
 
-SP_PWD=$(az ad sp create-for-rbac --skip-assignment -n $ACR_SP --query password --output tsv)
-echo $SP_PWD > ~/.ssh/sp_pwd
-APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
+export AKS_PWD=$(az ad sp create-for-rbac --skip-assignment -n $AKS_SP --query password --output tsv)
+echo $AKS_PWD > ~/.ssh/aks_pwd
+export AKS_APP_ID=$(az ad sp show --id http://$AKS_SP --query appId --output tsv)
 
 # create Docker build VM
 if [ -f ~/.ssh/id_rsa ]; then
@@ -47,8 +47,8 @@ az aks create -g $AKSRG \
 -n $AKSNAME \
 -c 3 \
 -s $AKSSIZE \
---service-principal $APP_ID \
---client-secret $SP_PWD
+--service-principal $AKS_APP_ID \
+--client-secret $AKS_PWD
 
 echo " "
 echo $DHOST

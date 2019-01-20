@@ -6,6 +6,7 @@ export ACR_NAME=bartr
 # Change these if desired
 export AKSRG=aks
 export ACRRG=acr
+export AKS_SP=AKS_${ACR_NAME}
 export ACR_SP=ACR_${ACR_NAME}
 export AKSNAME=aks
 export AKSLOC=centralus
@@ -14,9 +15,14 @@ export AKSSIZE=Standard_D2s_v3
 # Don't change this
 export MCRG=MC_${AKSRG}_${AKSNAME}_${AKSLOC}
 
-# Read the SP password if it exists
-if [ -f ~/.ssh/sp_pwd ]; then
-	export SP_PWD=$(cat ~/.ssh/sp_pwd)
+# Read the AKS SP password if it exists
+if [ -f ~/.ssh/aks_pwd ]; then
+	export AKS_PWD=$(cat ~/.ssh/aks_pwd)
+fi
+
+# Read the ACR SP password if it exists
+if [ -f ~/.ssh/acr_pwd ]; then
+	export ACR_PWD=$(cat ~/.ssh/acr_pwd)
 fi
 
 # setup an alias (optional)
