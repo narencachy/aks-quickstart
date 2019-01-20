@@ -1,13 +1,14 @@
 #!/bin/bash
 
-# this needs to be a unique DNS name 
-export ACR_NAME=bartr
+# this needs to be a unique DNS name
+# DNS rules apply - all lower case, start end with character; character, numeric and - only
+export ACR_NAME={{acr_name}}
 
 # Change these if desired
 export AKSRG=aks
 export ACRRG=acr
-export AKS_SP=AKS_${ACR_NAME}
-export ACR_SP=ACR_${ACR_NAME}
+export AKS_SP=${ACR_NAME}-aks
+export ACR_SP=${ACR_NAME}-acr
 export AKSNAME=aks
 export AKSLOC=centralus
 export AKSSIZE=Standard_D2s_v3
