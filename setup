@@ -2,13 +2,15 @@
 
 mkdir -p ~/.ssh
 
-. setenv
+. ~/setenv
 
 az group create --name $AKSRG --location $AKSLOC
 az group create -n $ACRRG --location $AKSLOC
 
 # Create service principal
-az ad sp create-for-rbac --skip-assignment -n $ACR_SP -p $SP_PWD
+
+SP_PWD=$(az ad sp create-for-rbac --skip-assignment -n $ACR_SP --query password --output tsv)
+echo $SP_PWD > ~/.ssh/sp_pwd
 APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
 
 # create Docker build VM
@@ -29,9 +31,16 @@ else
     -g $ACRRG \
     -n docker \
     --admin-username aks --admin-password=Kubernetes-k8s \
-    --custom-data docker/startup.sh
-#    --generate-ssh-keys \
+    --custom-data docker/startup.sh \
+    --generate-ssh-keys
 fi
+
+export DHOST=aks@`az network public-ip show -g $ACRRG -n dockerPublicIP --query [ipAddress] -o tsv`
+echo " "
+echo $DHOST
+echo " "
+echo " "
+echo "Creating AKS Cluster"
 
 # create AKS cluster
 az aks create -g $AKSRG \
@@ -39,8 +48,7 @@ az aks create -g $AKSRG \
 -c 3 \
 -s $AKSSIZE \
 --service-principal $APP_ID \
---client-secret $SP_PWD \
---no-wait
+--client-secret $SP_PWD
 
-export DHOST=aks@`az network public-ip show -g $ACRRG -n dockerPublicIP --query [ipAddress] -o tsv`
+echo " "
 echo $DHOST

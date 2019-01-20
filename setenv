@@ -3,7 +3,6 @@
 # this needs to be a unique DNS name 
 export ACR_NAME=bartr
 
-
 # Change these if desired
 export AKSRG=aks
 export ACRRG=acr
@@ -18,12 +17,7 @@ export MCRG=MC_${AKSRG}_${AKSNAME}_${AKSLOC}
 # Read the SP password if it exists
 if [ -f ~/.ssh/sp_pwd ]; then
 	export SP_PWD=$(cat ~/.ssh/sp_pwd)
-else
-	export SP_PWD=`openssl rand -base64 32`
-	echo $SP_PWD > ~/.ssh/sp_pwd
 fi
-
 
 # setup an alias (optional)
 alias k=kubectl
-
