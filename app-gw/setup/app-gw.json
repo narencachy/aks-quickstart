@@ -2,8 +2,8 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
 
   "variables": {
-    "vnetName": "aks-vnet-22918071",
-    "backendIpAddress": "10.240.0.7",
+    "vnetName": "{{vnet}}",
+    "backendIpAddress": {{ip}},
 
     "agName": "app-gw",
     "pipName": "app-gw-ip",
