@@ -12,6 +12,8 @@ apt-get install -y apt-transport-https ca-certificates curl git wget nano lsb-re
 
 git clone https://github.com/bartr/aks-quickstart /home/aks/aks
 
+chown -R aks:aks /home/aks
+
 echo "adding repos ..." > /home/aks/status
 
 # add Docker repo
@@ -49,8 +51,6 @@ apt-get install -y azure-cli docker-ce kubectl
 echo " " >> /home/aks/.profile
 echo ". ~/setenv" >> /home/aks/.profile
 echo "git -C ~/aks pull" >> /home/aks/.profile
-
-chown -R aks:aks /home/aks
 
 echo "ready" > /home/aks/status
 
