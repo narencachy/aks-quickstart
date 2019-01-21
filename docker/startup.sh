@@ -10,6 +10,10 @@ usermod -aG docker aks
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl git wget nano lsb-release software-properties-common jq redis-tools
 
+git clone https://github.com/bartr/aks-quickstart /home/aks/aks
+
+echo "adding repos ..." > /home/aks/status
+
 # add Docker repo
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
@@ -28,6 +32,8 @@ apt-key --keyring /etc/apt/trusted.gpg.d/Microsoft.gpg adv --keyserver packages.
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
 
+echo "installing ..." > /home/aks/status
+
 apt-get update
 apt-get install -y azure-cli docker-ce kubectl
 
@@ -39,8 +45,6 @@ apt-get install -y azure-cli docker-ce kubectl
 #apt-get dist-upgrade -y
 
 #shutdown -r now
-
-git clone https://github.com/bartr/aks-quickstart /home/aks/aks
 
 echo " " >> /home/aks/.profile
 echo ". ~/setenv" >> /home/aks/.profile
