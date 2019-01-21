@@ -8,7 +8,7 @@ Don't worry if you don't have a clue what these do. We'll get there ...
 
 # You can copy and paste all of these at once
 
-kubectl apply -f app-gw/svc
+kubectl apply -f app-gw/svc.yaml
 
 MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv` && echo $MCVNET
 az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet-name $MCVNET --address-prefix 10.0.0.0/24
@@ -19,14 +19,6 @@ az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet
 
 ```
 
-# ACR_NAME has to be a unique DNS address
-# use ping to check uniqueness
-# if you don't get "Name or service not known", change ACR_NAME until you do
-
-ACR_NAME=yourdesiredname
-ping ${ACR_NAME}.azurecr.io
-
-# create the Azure container registry
 az acr create -g $ACRRG -n $ACR_NAME --sku Basic
 
 ```
@@ -58,6 +50,7 @@ az group deployment create --name app-gw-deployment -g $MCRG --template-file app
 ```
 
 # now run these
+cd ~/aks
 kubectl apply -f acrgoweb/svc.yaml
 kubectl apply -f votes/svc.yaml
 kubectl apply -f webapp/svc.yaml

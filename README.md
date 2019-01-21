@@ -87,8 +87,6 @@ nano setenv
 
 ```
 
-source setenv
-
 # this takes a while
 ./setup
 
@@ -779,6 +777,7 @@ az ad sp delete --id $ACR_APP_ID
 # Delete resource groups
 az group delete -y --no-wait -g $AKSRG
 az group delete -y --no-wait -g MC_${AKSRG}_${AKSNAME}_${AKSLOC}
+az group delete -y --no-wait -g NetworkWatcherRG
 az group delete -y --no-wait -g $ACRRG
 
 # resource groups should show "deleting"
