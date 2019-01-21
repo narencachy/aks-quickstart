@@ -258,6 +258,7 @@ setenv (which runs in .profile) creates a "k" alias to make typing easier, so yo
 kubectl get all
 
 # wait until the nodes show as "ready"
+kubectl get nodes
 
 # Run an app (technically, create a deployment)
 kubectl create deployment goweb --image=bartr/go-web-aks
@@ -653,6 +654,7 @@ Notice that AKS added a Public IP and reconfigured the Load Balancer after you d
 Creating and using your own Azure Container Registry
 
 ```
+
 # ACR_NAME has to be a unique DNS address
 # use ping to check uniqueness
 # if you don't get "Name or service not known", change ACR_NAME until you do
