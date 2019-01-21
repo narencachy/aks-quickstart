@@ -1,8 +1,6 @@
 # AKS Walk Through
 #### 100 level
 
-Beta Test Note: The screen shots need to be updated, so they won't be exact, but they're close
-
 ## Scenario
 In this walk through of AKS basics, we're going to create an AKS cluster and deploy services to the cluster. Much of the code is based on <https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough> but additional details and scenarios are covered. Note that this is a high level overview, so a lot of topics are not covered and those that are covered are high level. This is designed to be the first few steps on the AKS journey. 
 
@@ -31,7 +29,6 @@ The full walk through takes about 3 hours.
 
 * Azure subscription
 * Access to Azure Portal and Azure Cloud Shell
-* A good attitude (this is a beta!)
 
 ### Approach
 
@@ -67,6 +64,8 @@ az account list -o table
 # change your default subscription if desired
 az account set -s <your-subscription>
 
+az account show
+
 ```
 
 ### Note
@@ -94,6 +93,8 @@ nano setenv
 
 ### Docker overview slides
 
+A quick Docker introduction while our Build Server deploys
+
 ### ssh into the build server
 
 Get the address of the build server
@@ -107,6 +108,8 @@ export DHOST="aks@`az network public-ip show -g $ACRRG -n dockerPublicIP --query
 ## Connect to the build server
 
 Open a command prompt or terminal window and enter the following command substituting the address of your build server. The rest of the walkthrough will be done from this terminal window.
+
+Note that if SSH is blocked by your firewall, you can continue to use Azure Cloud Shell.
 
 ssh aks@xxx.xxx.xxx.xxx
 
@@ -126,6 +129,7 @@ aks@docker:~$
 # if not ready, rerun the command until it is
 cat status
 
+# make sure the repo is up to date
 cd aks
 git pull
 
@@ -225,6 +229,9 @@ az aks create -g $AKSRG \
 
 Here's a quick [Docker walk through](docker.md)
 
+### AKS / Kubernetes Introduction
+
+Some quick slides on Kubernetes and AKS
 
 ### AKS Setup
 
@@ -244,19 +251,27 @@ cat ~/.kube/config
 
 ```
 
+### We're going to cheat a little ...
+
+[Open cheat.md](cheat.md) - we're going to start the setup of the services and application gateway so we don't have to wait as long.
+
 ### Some basic commands
 
 kubectl is the Kubernetes CLI. 
 
 setenv (which runs in .profile) creates a "k" alias to make typing easier, so you can type k instead of kubectl
 
+Some of the commands are easy to type. Others are easier to copy and paste.
+
 ```
 
 # see what's running
+# notice all the services we created
 kubectl get all
 
-# wait until the nodes show as "ready"
-kubectl get nodes
+# Create a jump box
+kubectl create deployment jbox --image=bartr/jumpbox
+jbox=`kubectl get pod | grep jbox` && set -- $jbox && jbox=$1 && echo $jbox
 
 # Run an app (technically, create a deployment)
 kubectl create deployment goweb --image=bartr/go-web-aks
@@ -267,16 +282,14 @@ kubectl get all
 # That's a LOT
 kubectl get pods
 
-# get the name of the pod
+# get the name of the goweb pod
 GW=`kubectl get pod | grep goweb` && set -- $GW && GW=$1 && echo $GW
 
 # Check the logs
 kubectl logs $GW
 
 # run shell commands
-# these commands execute inside your running container
-
-kubectl exec $GW -- ls -al www
+# these commands execute "inside" your running container
 
 # check the local website
 kubectl exec $GW -- curl localhost:8080
@@ -284,19 +297,6 @@ kubectl exec $GW -- curl localhost:8080/healthcheck
 
 # check the logs again
 kubectl logs $GW
-
-# run an interactive shell
-kubectl exec -it $GW -- sh
-
-# notice your prompt changes - you are now inside the container
-
-# run some shell commands
-ls -al
-cat logs/app.log
-
-# the container uses a minimized version of Alpine, so few utilities exist
-
-exit
 
 ```
 
@@ -330,26 +330,26 @@ kubectl logs $GW
 
 ```
 
-# Create a second deployment
-kubectl create deployment gw --image=bartr/go-web-aks
+# doesn't work
+kubectl exec $jbox -- curl goweb
 
-# Create a service (ClusterIP) that exposes the web site on port 80
-kubectl expose deployment gw --port=80 --target-port=8080 --name gw
+# Create a ClusterIP that exposes the web site on port 80
+kubectl expose deployment goweb --port=80 --target-port=8080 --name goweb
 
 # test the new web site
-kubectl exec $GW -- curl gw
-kubectl exec $GW -- curl gw/healthcheck
+kubectl exec $jbox -- curl goweb
+kubectl exec $jbox -- curl goweb/healthcheck
 
 # check the logs
-kubectl logs svc/gw
+kubectl logs svc/goweb
 
 # make some more requests
-kubectl exec $GW -- curl gw/healthcheck
-kubectl exec $GW -- curl gw/healthcheck
-kubectl exec $GW -- curl gw/healthcheck
+kubectl exec $jbox -- curl goweb/healthcheck
+kubectl exec $jbox -- curl goweb/healthcheck
+kubectl exec $jbox -- curl goweb/healthcheck
 
 # check the logs
-kubectl logs svc/gw
+kubectl logs svc/goweb
 
 ```
 
@@ -357,9 +357,8 @@ kubectl logs svc/gw
 
 ```
 
-kubectl delete deploy goweb
-kubectl delete svc,deploy gw
-kubectl get all
+kubectl delete svcdeploy goweb
+kubectl get deploy,pods
 
 ```
 
@@ -497,10 +496,10 @@ kubectl get svc
 
 kubectl get pods 
 
-# this creates the bartr2 secret
+# this creates the bartrlab-read secret
 cat acrgoweb/secret.yaml
 
-# this specifies the bartr2 secret in the imagePullSecrets section
+# this specifies the bartrlab-read secret in the imagePullSecrets section
 more acrgoweb/deploy.yaml
 
 # curl the public IP
@@ -518,7 +517,7 @@ kubectl delete -f acrgoweb
 
 kubectl apply -f redis
 
-# Wait for the app to start
+# Wait for redis to start
 kubectl get pods
 
 ```
@@ -530,7 +529,6 @@ kubectl get pods
 # Start port forarding in background
 kubectl port-forward svc/redis 6379:6379 &
 
-# wait for port to be forwarded
 # need to press enter to get back to prompt
 
 # Run some Redis commands
@@ -553,9 +551,7 @@ fg
 # press <ctl> c
 
 # A simpler way
-redis=`k get pods | grep redis` && set -- $redis && redis=$1 && echo $redis
-
-kubectl exec -it $redis -- redis-cli
+kubectl exec -it $jbox -- redis-cli -h redis
 
 incr Dogs
 decr Cats
@@ -574,6 +570,12 @@ This is a web app that uses the Redis server for persistance.
 ```
 
 kubectl apply -f votes
+
+# wait for the pods
+kubectl get pods
+
+# curl the cluster IP
+kubectl exec $jbox -- curl votes
 
 # Wait for the public IP
 kubectl get svc votes
