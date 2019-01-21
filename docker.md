@@ -41,7 +41,7 @@ ping www.microsoft.com
 apt-get update
 apt-get install -y iputils-ping curl redis-tools
 
-ping -c 3 www.microsoft.com
+ping -c 1 www.microsoft.com
 curl www.microsoft.com
 
 exit
@@ -83,6 +83,11 @@ pwd
 
 exit
 
+# See what's there
+docker ps
+
+docker ps -a
+
 # there's a MUCH better way! We'll get there soon.
 
 ```
@@ -96,7 +101,6 @@ exit
 docker run -d -p 80:8080 --name web bartr/go-web-aks
 
 # see what happened
-docker images
 docker ps
 docker logs web
 
@@ -144,6 +148,9 @@ docker rm web
 # you could do this instead
 docker rm -f web
 
+# only jbox should show
+docker ps -a
+
 ```
 
 ## Build a container
@@ -154,7 +161,7 @@ At the end of the first section, we said there was a better way to build images 
 
 ```
 
-cd ..
+cd ~
 git clone https://github.com/bartr/go-web-aks
 cd go-web-aks
 
@@ -288,6 +295,8 @@ docker login  -u 24046c70-b4b2-4c06-b62d-52f27d8f1974 -p 3b1ee421-3dc7-48dd-b097
 
 # Works
 docker pull bartrlab.azurecr.io/acrgoweb
+
+docker images
 
 ```
 

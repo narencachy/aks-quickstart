@@ -18,19 +18,24 @@ Next we will create a web app that uses a private load balancer and setup Azure 
 
 Lastly, we'll delete everything.
 
-The full walk through takes about 90 minutes.
+The full walk through takes about 3 hours.
 
 ### Additional Reading
 * AKS: <https://docs.microsoft.com/en-us/azure/aks/>
 * Kubernetes: <https://kubernetes.io/docs/home/>
 * Microsoft Cloud Workshop: <https://github.com/Microsoft/MCW-Containers-and-DevOps>
 * What the Hack - k8s: <https://github.com/Microsoft/WhatTheHack/tree/master/001-IntroToKubernetes>
+* AKS Video: <https://www.youtube.com/watch?v=4ht22ReBjno>
 
 ## Prerequisites
 
 * Azure subscription
 * Access to Azure Portal and Azure Cloud Shell
 * A good attitude (this is a beta!)
+
+### Approach
+
+There are many ways to run the Azure, Docker and Kubernetes CLIs. For this lab, we are going to use Azure Shell to create an Ubuntu "build server". We will then SSH into the build server and run the lab from the build server. This avoids the issues you run into when trying install everything locally and ensures that everyone is starting from a known status (DevOps).
 
 ## Let's get started
 
@@ -241,14 +246,6 @@ cat ~/.kube/config
 
 ```
 
-### Wait for the nodes to be ready
-
-```
-
-kubectl get nodes
-
-```
-
 ### Some basic commands
 
 kubectl is the Kubernetes CLI. 
@@ -259,6 +256,8 @@ setenv (which runs in .profile) creates a "k" alias to make typing easier, so yo
 
 # see what's running
 kubectl get all
+
+# wait until the nodes show as "ready"
 
 # Run an app (technically, create a deployment)
 kubectl create deployment goweb --image=bartr/go-web-aks
@@ -487,7 +486,7 @@ Notice that AKS added a Public IP and Load Balancer during deployment. The YAML 
 
 ## Azure Container Registry
 
-### Running a container from the bartr2.azurecr.io repo
+### Running a container from the bartrlab.azurecr.io repo
 
 ```
 
@@ -504,6 +503,10 @@ cat acrgoweb/secret.yaml
 
 # this specifies the bartr2 secret in the imagePullSecrets section
 more acrgoweb/deploy.yaml
+
+# curl the public IP
+agw=`kubectl get svc | grep acrgoweb` && set -- $agw && agw=$4 && echo $agw
+curl $agw
 
 # delete the deployment
 kubectl delete -f acrgoweb
@@ -740,8 +743,14 @@ docker login -u $ACR_APP_ID -p $ACR_PWD ${ACR_NAME}.azurecr.io
 
 docker pull ${ACR_NAME}.azurecr.io/acrgoweb
 
+# this will fail
+docker push ${ACR_NAME}.azurecr.io/acrgoweb
+
 # set your creds back to admin
 az acr login -n $ACR_NAME
+
+# now it works again
+docker push ${ACR_NAME}.azurecr.io/acrgoweb
 
 # Create your secret file
 kubectl create secret docker-registry ${ACR_SP}-reader \
