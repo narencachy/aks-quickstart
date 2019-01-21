@@ -44,9 +44,8 @@ If this is your first time using Azure Cloud Shell, installation instructions ar
 
 ```
 
-git clone https://github.com/bartr/aks-quickstart
-
-cd aks-quickstart
+git clone https://github.com/bartr/aks-quickstart aks
+cd aks
 
 ```
 
@@ -55,7 +54,7 @@ cd aks-quickstart
 ```
 
 # show default subscription
-az account show -o table
+az account show
 
 # list all subscriptions
 az account list -o table
@@ -65,19 +64,32 @@ az account set -s <your-subscription>
 
 ```
 
-### Create a Docker build server and AKS Cluster
+### Note
+
+If multiple people are using the same subscription, you will need to edit setenv and change AKSRG and ACSRG to be unique
 
 ```
+nano setenv
+
+# change AKSRG and ACSRG to be unique
+# do not make any other changes
+# press <ctl> x to exit
+# press s to save
+
+```
+
+### Create a Docker build server
+
+```
+
+source setenv
 
 # this takes a while
 ./setup
 
 ```
 
-### What this did
-If you check the Azure portal, you will see that this command created two resource groups - aks and MC_aks_aks_centralus. The aks resource group contains the AKS service (Controller) and the Docker build VM. The MC_aks_aks_centralus resource group contains the k8s nodes. Here is a screen shot of what is created in the MC_aks_aks_centralus resource group. You will notice that there are 3 Nodes (VMs).
-
-![Initial node resource group](images/aks-node-initial.png)
+### Docker overview slides
 
 ### ssh into the build server
 
@@ -88,6 +100,8 @@ Get the address of the build server
 export DHOST="aks@`az network public-ip show -g $ACRRG -n dockerPublicIP --query [ipAddress] -o tsv`" && echo $DHOST
 
 ```
+
+## Connect to the build server
 
 Open a command prompt or terminal window and enter the following command substituting the address of your build server. The rest of the walkthrough will be done from this terminal window.
 
@@ -106,21 +120,33 @@ aks@docker:~$
 ```
 
 # should return ready
+# if not ready, rerun the command until it is
 cat status
 
-# if not complete, wait until it is and then run this command
-source .profile
+cd aks
+git pull
 
 ```
 
-### Docker walk through
+### Note
 
-If you're not familiar with Docker, here's a quick [walk through](docker.md)
+If multiple people are using the same subscription, you will need to edit setenv and change AKSRG and ACSRG to be unique
 
+Make sure to change exactly as you did the first time!
+
+```
+nano setenv
+
+# change AKSRG and ACSRG to be unique
+# do not make any other changes
+# press <ctl> x to exit
+# press s to save
+
+```
 
 ### Login and select your Azure subscription
 
-If you did this during the Docker walk through, you can skip this step.
+We need to login and select our subscription on the build server (same steps we did in Azure Cloud Shell)
 
 ```
 
@@ -134,22 +160,80 @@ az login
 ```
 
 # show default subscription
-az account show -o table
-
-# show default subscription
-az account show -o table
+az account show
 
 # list all subscriptions
 az account list -o table
 
 # change your default subscription if desired
 az account set -s <your-subscription>
+az account show
 
 ```
+
+### Pre setup
+
+```
+
+# ACR_NAME has to be a unique DNS address
+# DNS rules apply - all lower case, start end with character; character, numeric and - only
+# use ping to check uniqueness
+# if you don't get "Name or service not known", change ACR_NAME until you do
+
+ACR_NAME=your-desired-name
+ping ${ACR_NAME}.azurecr.io
+
+# update ~/setenv
+sed s/{{acr_name}}/${ACR_NAME}/ setenv > ~/setenv
+source ~/setenv
+
+# check the environment variables
+env | grep AKS
+env | grep ACR
+
+```
+
+### Setup AKS
+
+```
+
+# Create service principal
+export AKS_PWD=$(az ad sp create-for-rbac --skip-assignment -n $AKS_SP --query password --output tsv) && echo $AKS_PWD
+export AKS_APP_ID=$(az ad sp show --id http://$AKS_SP --query appId --output tsv) && echo $AKS_APP_ID
+
+# Save for later
+echo $AKS_PWD > ~/.ssh/aks_pwd
+echo $AKS_APP_ID > ~/.ssh/aks_app_id
+
+# this will take a while
+# create AKS cluster
+az aks create -g $AKSRG \
+-n $AKSNAME \
+-c 3 \
+-s $AKSSIZE \
+--service-principal $AKS_APP_ID \
+--client-secret $AKS_PWD \
+--generate-ssh-keys \
+--no-wait
+
+```
+
+### Docker walk through
+
+Here's a quick [Docker walk through](docker.md)
+
+
+### AKS Setup
+
+If you check the Azure portal, you will see that AKS setup created two resource groups - aks and MC_aks_aks_centralus. (there is also an ACR resource Group where the build server is running and a NetworkWatcherRG) The aks resource group contains the AKS service (Controller). The MC_aks_aks_centralus resource group contains the k8s nodes. Here is a screen shot of what is created in the MC_aks_aks_centralus resource group. You will notice that there are 3 Nodes (VMs).
+
+![Initial node resource group](images/aks-node-initial.png)
 
 ### Get the k8s credentials and save in ~/.kube/config
 
 ```
+
+cd ~/aks
 
 az aks get-credentials -g $AKSRG -n $AKSNAME
 
@@ -181,6 +265,9 @@ kubectl create deployment goweb --image=bartr/go-web-aks
 
 # see what was created
 kubectl get all
+
+# That's a LOT
+kubectl get pods
 
 # get the name of the pod
 GW=`kubectl get pod | grep goweb` && set -- $GW && GW=$1 && echo $GW
@@ -252,8 +339,19 @@ kubectl create deployment gw --image=bartr/go-web-aks
 kubectl expose deployment gw --port=80 --target-port=8080 --name gw
 
 # test the new web site
-exec $GW -- curl gw
-exec $GW -- curl gw/healthcheck
+kubectl exec $GW -- curl gw
+kubectl exec $GW -- curl gw/healthcheck
+
+# check the logs
+kubectl logs svc/gw
+
+# make some more requests
+kubectl exec $GW -- curl gw/healthcheck
+kubectl exec $GW -- curl gw/healthcheck
+kubectl exec $GW -- curl gw/healthcheck
+
+# check the logs
+kubectl logs svc/gw
 
 ```
 
@@ -346,16 +444,12 @@ The source code for the web app is available here: <https://github.com/bartr/go-
 
 ```
 
+cd ~/aks
+
 kubectl apply -f webapp
 
 # Wait for service to start
 kubectl get svc webapp
-
-# Wait for the public IP
-
-# curl the public IP
-w=`kubectl get svc | grep webapp` && set -- $w && w=$4 && echo $w
-curl $w
 
 ```
 
@@ -373,6 +467,13 @@ kubectl apply -f webapp
 # Notice that the service (public IP) doesn't change but the pods (deployment) do
 
 kubectl get svc,pods
+
+# Wait for the public IP
+kubectl get svc webapp
+
+# curl the public IP
+w=`kubectl get svc | grep webapp` && set -- $w && w=$4 && echo $w
+curl $w
 
 ```
 
@@ -437,6 +538,8 @@ bin/redis-cli
 set Dogs 100
 set Cats 1
 
+incr Dogs
+
 get Dogs
 get Cats
 
@@ -453,7 +556,11 @@ redis=`k get pods | grep redis` && set -- $redis && redis=$1 && echo $redis
 kubectl exec -it $redis -- redis-cli
 
 incr Dogs
-incr Cats
+decr Cats
+
+get Dogs
+get Cats
+
 exit
 
 ```
@@ -500,22 +607,21 @@ kubectl get svc,pods
 MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv` && echo $MCVNET
 az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet-name $MCVNET --address-prefix 10.0.0.0/24
 
+IP=`kubectl get svc app-gw -o json | jq .status.loadBalancer.ingress[0].ip` && echo $IP
+
 # change to the setup directory
-cd app-gw/setup
+cd ~/aks/app-gw/setup
 
-# Edit app-gw.json
-
-# change the vnet to
-echo $MCVNET
-
-# change backendIpAddress to:
-kubectl get svc app-gw -o json | jq .status.loadBalancer.ingress[0].ip
+# update app-gw.json
+sed s/{{vnet}}/$MCVNET/ app-gw.json > v.json
+sed s/{{ip}}/$IP/ v.json > app-gw-final.json
+rm v.json
 
 # Deploy app-gw.json
-# This takes 15-30 minutes
-az group deployment create --name app-gw-deployment -g $MCRG --template-file app-gw.json --no-wait
+az group deployment create --name app-gw-deployment -g $MCRG --template-file app-gw-final.json --no-wait
 
 # Make sure app gateway is "ready"
+# This takes 15-30 minutes
 az network application-gateway show -g $MCRG --name app-gw -o table
 
 # get the app gateway public IP address
@@ -556,9 +662,9 @@ az acr login -n $ACR_NAME
 
 # Assign role to service principal
 # this lets AKS pull images securely from ACR
-ACR_ID=$(az acr show -n $ACR_NAME -g $ACRRG --query "id" --output tsv)
-APP_ID=$(az ad sp show --id http://$ACR_SP --query appId --output tsv)
-az role assignment create --assignee $APP_ID --scope $ACR_ID --role Reader
+ACR_ID=$(az acr show -n $ACR_NAME -g $ACRRG --query "id" --output tsv) && echo $ACR_ID
+AKS_APP_ID=$(az ad sp show --id http://$AKS_SP --query appId --output tsv) && echo $AKS_APP_ID
+az role assignment create --assignee $AKS_APP_ID --scope $ACR_ID --role Reader
 
 # clone the repo if you didn't clone in the Docker walk through
 cd ~
@@ -568,7 +674,11 @@ git clone https://github.com/bartr/go-web-aks
 cd ~/go-web-aks
 
 # local build
+docker images
 docker build -t ${ACR_NAME}.azurecr.io/acrgoweb .
+docker images
+
+# push the image to ACR
 docker push ${ACR_NAME}.azurecr.io/acrgoweb
 
 # List images in ACR
@@ -604,34 +714,56 @@ APP_ID and SP_PWD should be in Key Vault ...
 
 ```
 
-kubectl create secret docker-registry $ACR_NAME \
+cd ~
+
+# Create a Service Principal
+ACR_PWD=$(az ad sp create-for-rbac --skip-assignment -n ${ACR_SP}-reader --query password --output tsv) && echo $ACR_PWD
+ACR_APP_ID=$(az ad sp show --id http://${ACR_SP}-reader --query appId --output tsv) && echo $ACR_APP_ID
+ACR_ID=$(az acr show -n $ACR_NAME -g $ACRRG --query "id" --output tsv) && echo $ACR_ID
+
+# save for later
+echo $ACR_PWD > ~/.ssh/acr_pwd
+echo $ACR_APP_ID > ~/.ssh/acr_app_id
+
+# assign read permission
+az role assignment create --assignee $ACR_APP_ID --scope $ACR_ID --role Reader
+
+docker rmi ${ACR_NAME}.azurecr.io/acrgoweb
+
+# login with Docker
+docker login -u $ACR_APP_ID -p $ACR_PWD ${ACR_NAME}.azurecr.io
+
+docker pull ${ACR_NAME}.azurecr.io/acrgoweb
+
+# set your creds back to admin
+az acr login -n $ACR_NAME
+
+# Create your secret file
+kubectl create secret docker-registry ${ACR_SP}-reader \
 --dry-run -o yaml \
 --docker-server=${ACR_NAME}.azurecr.io \
---docker-username=$APP_ID \
---docker-password=$SP_PWD \
+--docker-username=$ACR_APP_ID \
+--docker-password=$ACR_PWD \
 --docker-email=someone@outlook.com > my_secret.yaml
 
 cat my_secret.yaml
-
-# Decoding dockerconfig.json
-# paste the base64 encoded value between ""
-echo "" | base64 --decode
 
 ```
 
 ### Clean up
 
 ```
-# exit to Azure Cloud Shell
-exit
+
+# this will delete your build server too ...
+
+# Delete service principal
+az ad sp delete --id $AKS_APP_ID
+az ad sp delete --id $ACR_APP_ID
 
 # Delete resource groups
 az group delete -y --no-wait -g $AKSRG
-az group delete -y --no-wait -g $ACRRG
 az group delete -y --no-wait -g MC_${AKSRG}_${AKSNAME}_${AKSLOC}
-
-# Delete service principal
-az ad sp delete --id $APP_ID
+az group delete -y --no-wait -g $ACRRG
 
 # resource groups should show "deleting"
 az group list -o table
