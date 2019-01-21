@@ -625,11 +625,16 @@ az group deployment create --name app-gw-deployment -g $MCRG --template-file app
 az network application-gateway show -g $MCRG --name app-gw -o table
 
 # get the app gateway public IP address
-echo "http://`az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output tsv`"
+AGW=`az network public-ip show -g $MCRG --name app-gw-ip --query [ipAddress] --output tsv` && echo $AGW
 
-# Browse to the url
-# you should be automatically redirected to https
-# note that we use a self-signed cert, so you will get a warning from your browser
+# this will redirect to https
+curl $AGW
+
+# self signed cert error
+curl https://$AGW
+
+# Dogs STILL RULE!
+curl -k https://$AGW
 
 ```
 
