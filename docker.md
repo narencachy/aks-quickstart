@@ -1,6 +1,8 @@
 # Docker Walk Through
 ### 100 level
 
+### Setup
+
 If you haven't already, clone the repo and run setup as explained in the [readme](README.md)
 
 ### Connect to your build server
@@ -10,15 +12,6 @@ Follow the steps in [readme](README.md) to connect to your build server via SSH
 Your prompt should look like this:
 
 aks@docker:~/$
-
-### Make sure post install script has completed
-
-```
-
-# should return ready
-cat status
-
-```
 
 ### Some basic docker commands
 
@@ -36,6 +29,8 @@ docker run -it --name jbox ubuntu
 
 # notice your prompt changed to something like this: root@257fde9a1ad2:/#
 # we are now "in" the docker container
+# your prompt should look like this: root@785fd6738c06:/#
+
 pwd
 cd root
 
@@ -81,6 +76,12 @@ docker commit -c "WORKDIR /root" jbox jumpbox
 # remove the instance and run again
 docker rm jbox
 docker run -it --name jbox jumpbox
+
+# from the docker container
+
+pwd
+
+exit
 
 # there's a MUCH better way! We'll get there soon.
 
@@ -134,6 +135,7 @@ docker stop web
 # we can restart it
 docker start web
 curl localhost
+docker logs web
 
 # stop and remove
 docker stop web
@@ -146,12 +148,13 @@ docker rm -f web
 
 ## Build a container
 
-At the end of the first section, we said there was a better way ...
+At the end of the first section, we said there was a better way to build images ...
 
 ### Clone a sample Go app
 
 ```
 
+cd ..
 git clone https://github.com/bartr/go-web-aks
 cd go-web-aks
 
@@ -194,7 +197,7 @@ docker logs web
 docker stop web
 docker rm web
 
-# should be nothing running
+# only the jumpbox should show
 docker ps -a
 
 ```
@@ -224,9 +227,21 @@ docker network  connect vote jbox
 # let's try again
 docker start -ai jbox
 
-ping redis
+ping -c 1 redis
 
-# w00t
+# let's connect to Redis
+redis-cli -h redis
+
+set Dogs 100
+set Cats 3
+
+incr Dogs
+decr Cats
+
+# exit redis-cli
+exit
+
+# exit the jumpbox
 exit
 
 # let's run a web app that talks to the redis cache
@@ -237,7 +252,9 @@ docker start -ai jbox
 
 curl govote:8080
 
-# sweet
+# Dogs RULE!
+
+# exit the jump box
 exit
 
 ```
@@ -247,25 +264,31 @@ exit
 ```
 docker rm -f govote
 
-# let's expose Redis too
-docker rm -f redis
-
-# same run command with -p
-docker run -d --name redis --net vote -p 6379:6379 redis
-
-# let's see if it works
-bin/redis-cli
-
-set Dogs 100
-set Cats 1
-exit
-
-# Same run command with -p
+# Same run command with -p option to expose the port
 docker run -d --net vote --name govote -p 80:8080 bartr/govote
 
 curl localhost
 
 # Dogs RULE!
+
+```
+
+### Pull an image from ACR
+
+The ACR section of the k8s walkthrough demonstrates how to create a Service Principal with access for docker / kubectl
+
+Note: the ID / Password should be stored in Key Vault, not a public repo ...
+
+```
+# oops
+docker pull bartrlab.azurecr.io/acrgoweb
+
+# Have to login with a Service Principal
+docker login  -u 24046c70-b4b2-4c06-b62d-52f27d8f1974 -p 3b1ee421-3dc7-48dd-b097-874cd37ec4e3 bartrlab.azurecr.io
+
+# Works
+docker pull bartrlab.azurecr.io/acrgoweb
+
 ```
 
 ### Container size matters
@@ -288,6 +311,9 @@ docker images
 docker rm -f govote
 docker rm -f redis
 docker rm jbox
+
+# check results
+docker ps -a
 
 ```
 
