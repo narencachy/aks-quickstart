@@ -4,6 +4,11 @@ mkdir -p ~/.ssh
 
 . setenv
 
+# Save environment variables for future shells
+echo " " >> ~/.bashrc
+echo "git -C ~/aks pull" >> ~/.bashrc
+echo ". ~/aks/setenv" >> ~/.bashrc
+
 az group create --name $AKSRG --location $AKSLOC
 az group create -n $ACRRG --location $AKSLOC
 
