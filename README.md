@@ -20,7 +20,7 @@ The full walk through takes about 3 hours.
 
 ### Additional Reading
 
-[A colleciton of links](links.md)
+[A collection of links](links.md)
 
 ## Prerequisites
 
