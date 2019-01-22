@@ -2,6 +2,7 @@
 
 mkdir -p ~/.ssh
 
+# source the environment variables
 . setenv
 
 # Save environment variables for future shells
