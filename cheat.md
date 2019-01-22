@@ -1,4 +1,22 @@
-# Time Saving
+# Time Saving Cheats
+
+### Start some long running tasks in advance
+
+Don't worry if you don't have a clue what these do. We'll get there ...
+
+
+```
+
+# Create Azure Container Registry
+az acr create -g $ACRRG -n $ACR_NAME --sku Basic
+
+# Create a subnet for app gateway
+MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv` && echo $MCVNET
+
+# only run this if the above command isn't blank
+az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet-name $MCVNET --address-prefix 10.0.0.0/24
+
+```
 
 ### Wait for the nodes to be ready
 
@@ -21,20 +39,11 @@ kubectl apply -f acrgoweb/svc.yaml
 kubectl apply -f votes/svc.yaml
 kubectl apply -f webapp/svc.yaml
 
-MCVNET=`az network vnet list -g $MCRG --query '[0].[name]' -o tsv` && echo $MCVNET
-az network vnet subnet create --name app-gw-subnet --resource-group $MCRG --vnet-name $MCVNET --address-prefix 10.0.0.0/24
-
-```
-
-### Create Azure Container Registry
-
-```
-
-az acr create -g $ACRRG -n $ACR_NAME --sku Basic
-
 ```
 
 ### Finish some prep work
+
+We'll come back to this after the k8s / AKS slides
 
 ```
 

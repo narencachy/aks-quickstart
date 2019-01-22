@@ -229,6 +229,10 @@ az aks create -g $AKSRG \
 
 Here's a quick [Docker walk through](docker.md)
 
+### We're going to cheat a little ...
+
+[Open cheat.md](cheat.md) - we're going to start the setup of the services and application gateway so we don't have to wait as long.
+
 ### AKS / Kubernetes Introduction
 
 Some quick slides on Kubernetes and AKS
